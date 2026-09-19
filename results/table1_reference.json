@@ -1,0 +1,37 @@
+{
+  "arxiv": "2608.14089v1",
+  "table": "Table 1",
+  "rounding": "mean and sample standard deviation, half-up to 3 decimals",
+  "cells": {
+    "pku_beaver": {
+      "raw_adherence": ["0.787", "0.004"],
+      "corrected_adherence": ["0.920", "0.002"],
+      "caught_share": ["0.806", "0.019"]
+    },
+    "pku_lg3": {
+      "raw_adherence": ["0.864", "0.005"],
+      "corrected_adherence": ["0.926", "0.004"],
+      "caught_share": ["0.703", "0.021"]
+    },
+    "pku_wg": {
+      "raw_adherence": ["0.906", "0.004"],
+      "corrected_adherence": ["0.932", "0.005"],
+      "caught_share": ["0.383", "0.063"]
+    },
+    "wgmix_big_beaver": {
+      "raw_adherence": ["0.898", "0.002"],
+      "corrected_adherence": ["0.933", "0.003"],
+      "caught_share": ["0.546", "0.029"]
+    },
+    "wgmix_big_lg3": {
+      "raw_adherence": ["0.923", "0.002"],
+      "corrected_adherence": ["0.943", "0.004"],
+      "caught_share": ["0.346", "0.047"]
+    },
+    "wgmix_big_wg": {
+      "raw_adherence": ["0.932", "0.002"],
+      "corrected_adherence": ["0.945", "0.003"],
+      "caught_share": ["0.291", "0.034"]
+    }
+  }
+}

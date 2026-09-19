@@ -1,0 +1,151 @@
+{
+  "change_log": [],
+  "loop_events": [],
+  "monitor": {
+    "deployed": null,
+    "final": null,
+    "recalibrations": [],
+    "streamless": true
+  },
+  "probe_selection": [
+    {
+      "group": 0,
+      "parameter": "C",
+      "value": 0.001
+    },
+    {
+      "group": 1,
+      "parameter": "C",
+      "value": 0.001
+    }
+  ],
+  "provenance": {
+    "code_sha256": "7edd8b7e2ef27c1494cb6987a3e9754dfaf5242884fdf05ef3e75c29b6d277ff",
+    "config": {
+      "estimator": {
+        "calibration": {
+          "method": "platt"
+        },
+        "probe": {
+          "family": "linear",
+          "select": {
+            "C": [
+              0.0001,
+              0.001,
+              0.01,
+              0.1
+            ]
+          }
+        },
+        "route_calibration": true,
+        "route_probe": true
+      },
+      "flip": {
+        "threshold": 0.5
+      },
+      "frame": {
+        "fitting_labels": "oracle",
+        "name": "pku-wg",
+        "path": "frames/pku_wg.npz",
+        "scoring_labels": [
+          "oracle",
+          "human"
+        ],
+        "sha256": "927f0800b1b577194e53d0722a66e37914760c1cd09d4eb2377f7dd0d07ac943"
+      },
+      "loop": {
+        "acceptance": {
+          "false_positive_tolerance": 0.25,
+          "recall_floor": 0.5
+        },
+        "audit_budget": 318,
+        "audit_sampling_window": 500,
+        "cross_fit_folds": 4,
+        "max_enlarging_retries": 2
+      },
+      "monitor": {
+        "calibration": {
+          "n_streams": 2000,
+          "stream_length": 342
+        },
+        "detectable_shift": {
+          "indifference_zone_quantile": 0.99
+        },
+        "event_bank": {
+          "boundaries": [
+            0.5,
+            0.9
+          ],
+          "budget_allocation": "joint"
+        },
+        "quiet_horizon_confidence": 0.95
+      },
+      "seeds": [
+        42,
+        123,
+        456,
+        789,
+        1024,
+        7,
+        2026,
+        31415,
+        271828,
+        8675309
+      ],
+      "split": {
+        "calibration_fraction": 0.4375,
+        "evaluation_fraction": 0.2,
+        "strata": [
+          "verdict",
+          "agreement"
+        ]
+      },
+      "study": "final-table1-pku-wg"
+    },
+    "config_sha256": "e7b49cbdbf4bff1e62aa88aa8d7098f9f7bcf4fe07660582266bbe2976568ea4",
+    "environment": {
+      "numpy": "2.5.1",
+      "python": "3.12.3",
+      "scikit-learn": "1.9.0",
+      "scipy": "1.18.0"
+    },
+    "frame_sha256": "927f0800b1b577194e53d0722a66e37914760c1cd09d4eb2377f7dd0d07ac943"
+  },
+  "readout": {
+    "auroc": 0.9336208830559222,
+    "caught_share": 0.45384615384615384,
+    "caught_share_population": 130,
+    "corrected_adherence": 0.9301538461538461,
+    "ece": 0.015967559105853246,
+    "frame_name": "pku-wg",
+    "label_set": "oracle",
+    "oracle_labels_spent": 16422,
+    "raw_adherence": 0.9027692307692308
+  },
+  "readouts": {
+    "human": {
+      "auroc": 0.9140054023624224,
+      "caught_share": 0.5217391304347826,
+      "caught_share_population": 69,
+      "corrected_adherence": 0.920923076923077,
+      "ece": 0.021740531818297798,
+      "frame_name": "pku-wg",
+      "label_set": "human",
+      "oracle_labels_spent": 16422,
+      "raw_adherence": 0.9163076923076923
+    },
+    "oracle": {
+      "auroc": 0.9336208830559222,
+      "caught_share": 0.45384615384615384,
+      "caught_share_population": 130,
+      "corrected_adherence": 0.9301538461538461,
+      "ece": 0.015967559105853246,
+      "frame_name": "pku-wg",
+      "label_set": "oracle",
+      "oracle_labels_spent": 16422,
+      "raw_adherence": 0.9027692307692308
+    }
+  },
+  "seed": 31415,
+  "total_oracle_labels_spent": 16422
+}

@@ -1,0 +1,642 @@
+{
+  "absorption": [
+    "sensinfo",
+    0.2200536870361598
+  ],
+  "acceptance_baseline": {
+    "over_block": 0.011396011396011397,
+    "recall": 0.8218623481781376
+  },
+  "alarms": [
+    {
+      "boundary": 0.95,
+      "monitored_position": 13936,
+      "regime": 0,
+      "stream_position": 15936
+    }
+  ],
+  "baseline_in": {
+    "base": 0.7503552818569399,
+    "mentalhealth": 0.24964471814306016
+  },
+  "chain_seed": 42,
+  "change_log": [
+    {
+      "gate_labels": 300,
+      "gate_over_block": 0.025210084033613446,
+      "gate_recall": 0.7741935483870968,
+      "monitored_position": 13936,
+      "old_probe_gate_over_block": 0.025210084033613446,
+      "old_probe_gate_recall": 0.7580645161290323,
+      "oracle_labels_spent": 600,
+      "post_alarm_gate_length": 300,
+      "post_alarm_length": 1200,
+      "post_alarm_rate": 0.2200536870361598,
+      "post_alarm_reused_rows": 0,
+      "probe_selection": [
+        {
+          "group": 0,
+          "parameter": "C",
+          "value": 0.001
+        },
+        {
+          "group": 1,
+          "parameter": "C",
+          "value": 0.001
+        }
+      ],
+      "reference_audit_overlap_fraction": null,
+      "reference_window_eligible_positions": null,
+      "reference_window_length": null,
+      "reference_window_monitored_span": null,
+      "reference_window_skipped_positions": null,
+      "replay_seed": null,
+      "stream_position": 15936,
+      "trigger": "alarm in regime 0 at boundary 0.95",
+      "what": "repair"
+    }
+  ],
+  "cycle": 2,
+  "episode_seed": [
+    42,
+    2
+  ],
+  "family": "sensinfo",
+  "labels_billed": 600,
+  "loop_events": [
+    {
+      "audit_labels": null,
+      "boundary": 0.95,
+      "detail": "regime 0, boundary 0.95, at item 13936",
+      "gate_over_block": null,
+      "gate_passed": null,
+      "gate_recall": null,
+      "kind": "alarm",
+      "monitored_position": 13936,
+      "regime": 0,
+      "stream_position": 15936
+    },
+    {
+      "audit_labels": null,
+      "boundary": null,
+      "detail": "300 held-out oracle labels at the alarm's mixture; the probe in force reads recall 0.7581, over-block 0.0252 on them",
+      "gate_over_block": 0.025210084033613446,
+      "gate_passed": null,
+      "gate_recall": 0.7580645161290323,
+      "kind": "gate_block_composed",
+      "monitored_position": 13936,
+      "regime": null,
+      "stream_position": 15936
+    },
+    {
+      "audit_labels": null,
+      "boundary": null,
+      "detail": "300 oracle labels taken in order from the composed post-alarm segment",
+      "gate_over_block": null,
+      "gate_passed": null,
+      "gate_recall": null,
+      "kind": "audit",
+      "monitored_position": null,
+      "regime": null,
+      "stream_position": null
+    },
+    {
+      "audit_labels": 300,
+      "boundary": null,
+      "detail": "attempt 1: held-out recall 0.7742, over-block 0.0252 on 300 gate labels \u2014 passed",
+      "gate_over_block": 0.025210084033613446,
+      "gate_passed": true,
+      "gate_recall": 0.7741935483870968,
+      "kind": "acceptance_evaluated",
+      "monitored_position": null,
+      "regime": null,
+      "stream_position": null
+    },
+    {
+      "audit_labels": null,
+      "boundary": null,
+      "detail": "after alarm in regime 0 at boundary 0.95",
+      "gate_over_block": null,
+      "gate_passed": null,
+      "gate_recall": null,
+      "kind": "repair_accepted",
+      "monitored_position": null,
+      "regime": null,
+      "stream_position": null
+    },
+    {
+      "audit_labels": null,
+      "boundary": null,
+      "detail": "episode resolved: repaired",
+      "gate_over_block": null,
+      "gate_passed": null,
+      "gate_recall": null,
+      "kind": "watch_ended",
+      "monitored_position": null,
+      "regime": null,
+      "stream_position": null
+    }
+  ],
+  "monitor": {
+    "deployed": {
+      "boundaries": [
+        0.5,
+        0.95
+      ],
+      "break_even": [
+        {
+          "boundary": 0.5,
+          "regime": 0,
+          "value": 0.04002050272194491
+        },
+        {
+          "boundary": 0.95,
+          "regime": 0,
+          "value": 0.26151433941021096
+        },
+        {
+          "boundary": 0.5,
+          "regime": 1,
+          "value": 0.15236934370889418
+        },
+        {
+          "boundary": 0.95,
+          "regime": 1,
+          "value": 0.5927175442542005
+        }
+      ],
+      "budget_allocation": "joint",
+      "calibration_level": 0.3,
+      "detectable_shift": [
+        {
+          "boundary": 0.5,
+          "regime": 0,
+          "value": 0.024109288268663848
+        },
+        {
+          "boundary": 0.95,
+          "regime": 0,
+          "value": 0.052024271749702325
+        },
+        {
+          "boundary": 0.5,
+          "regime": 1,
+          "value": 0.0890500106386467
+        },
+        {
+          "boundary": 0.95,
+          "regime": 1,
+          "value": 0.11634009194011823
+        }
+      ],
+      "fitted_family_overlap": {
+        "all": 0.27678947368421053,
+        "base": 0.30586626895351726,
+        "drift": 0.11588720770288859
+      },
+      "indifference_zone_quantile": 0.99,
+      "monitored_length": 19000,
+      "n_streams": 4000,
+      "prefix_drift_checked": true,
+      "quiet_horizon_confidence": 0.7,
+      "realized_alarm_rate_at_reference": [
+        {
+          "boundary": 0.5,
+          "regime": 0,
+          "value": 0.00025
+        },
+        {
+          "boundary": 0.95,
+          "regime": 0,
+          "value": 0.0
+        },
+        {
+          "boundary": 0.5,
+          "regime": 1,
+          "value": 0.0
+        },
+        {
+          "boundary": 0.95,
+          "regime": 1,
+          "value": 0.0
+        }
+      ],
+      "realized_alarm_rate_combined_at_reference": 0.00025,
+      "realized_alarm_rate_combined_replayed": 0.09125,
+      "realized_alarm_rate_replayed": [
+        {
+          "boundary": 0.5,
+          "regime": 0,
+          "value": 0.03675
+        },
+        {
+          "boundary": 0.95,
+          "regime": 0,
+          "value": 0.0215
+        },
+        {
+          "boundary": 0.5,
+          "regime": 1,
+          "value": 0.0215
+        },
+        {
+          "boundary": 0.95,
+          "regime": 1,
+          "value": 0.01925
+        }
+      ],
+      "reference": [
+        {
+          "boundary": 0.5,
+          "regime": 0,
+          "value": 0.029120198265179677
+        },
+        {
+          "boundary": 0.95,
+          "regime": 0,
+          "value": 0.23605947955390336
+        },
+        {
+          "boundary": 0.5,
+          "regime": 1,
+          "value": 0.11139896373056994
+        },
+        {
+          "boundary": 0.95,
+          "regime": 1,
+          "value": 0.533678756476684
+        }
+      ],
+      "reference_posterior_quantile": [
+        {
+          "boundary": 0.5,
+          "regime": 0,
+          "value": 0.04002050272194511
+        },
+        {
+          "boundary": 0.95,
+          "regime": 0,
+          "value": 0.26151433941021085
+        },
+        {
+          "boundary": 0.5,
+          "regime": 1,
+          "value": 0.15236934370889432
+        },
+        {
+          "boundary": 0.95,
+          "regime": 1,
+          "value": 0.5927175442542006
+        }
+      ],
+      "replay_stream_length": 19000,
+      "resolved_detectable_shift": [
+        {
+          "boundary": 0.5,
+          "regime": 0,
+          "value": 0.024109288268663848
+        },
+        {
+          "boundary": 0.95,
+          "regime": 0,
+          "value": 0.052024271749702325
+        },
+        {
+          "boundary": 0.5,
+          "regime": 1,
+          "value": 0.0890500106386467
+        },
+        {
+          "boundary": 0.95,
+          "regime": 1,
+          "value": 0.11634009194011823
+        }
+      ],
+      "seed": [
+        42,
+        2
+      ],
+      "streams_in_the_tail": [
+        {
+          "boundary": 0.5,
+          "regime": 0,
+          "value": 105
+        },
+        {
+          "boundary": 0.95,
+          "regime": 0,
+          "value": 105
+        },
+        {
+          "boundary": 0.5,
+          "regime": 1,
+          "value": 105
+        },
+        {
+          "boundary": 0.95,
+          "regime": 1,
+          "value": 105
+        }
+      ],
+      "streams_per_centre": 10,
+      "threshold": [
+        {
+          "boundary": 0.5,
+          "regime": 0,
+          "value": 14.376120074558917
+        },
+        {
+          "boundary": 0.95,
+          "regime": 0,
+          "value": 14.856756216944495
+        },
+        {
+          "boundary": 0.5,
+          "regime": 1,
+          "value": 14.080965309681151
+        },
+        {
+          "boundary": 0.95,
+          "regime": 1,
+          "value": 13.739505778899856
+        }
+      ],
+      "wire_quantile_level": 0.02625
+    },
+    "final": {
+      "boundaries": [
+        0.5,
+        0.95
+      ],
+      "break_even": [
+        {
+          "boundary": 0.5,
+          "regime": 0,
+          "value": 0.04002050272194491
+        },
+        {
+          "boundary": 0.95,
+          "regime": 0,
+          "value": 0.26151433941021096
+        },
+        {
+          "boundary": 0.5,
+          "regime": 1,
+          "value": 0.15236934370889418
+        },
+        {
+          "boundary": 0.95,
+          "regime": 1,
+          "value": 0.5927175442542005
+        }
+      ],
+      "budget_allocation": "joint",
+      "calibration_level": 0.3,
+      "detectable_shift": [
+        {
+          "boundary": 0.5,
+          "regime": 0,
+          "value": 0.024109288268663848
+        },
+        {
+          "boundary": 0.95,
+          "regime": 0,
+          "value": 0.052024271749702325
+        },
+        {
+          "boundary": 0.5,
+          "regime": 1,
+          "value": 0.0890500106386467
+        },
+        {
+          "boundary": 0.95,
+          "regime": 1,
+          "value": 0.11634009194011823
+        }
+      ],
+      "fitted_family_overlap": {
+        "all": 0.27678947368421053,
+        "base": 0.30586626895351726,
+        "drift": 0.11588720770288859
+      },
+      "indifference_zone_quantile": 0.99,
+      "monitored_length": 19000,
+      "n_streams": 4000,
+      "prefix_drift_checked": true,
+      "quiet_horizon_confidence": 0.7,
+      "realized_alarm_rate_at_reference": [
+        {
+          "boundary": 0.5,
+          "regime": 0,
+          "value": 0.00025
+        },
+        {
+          "boundary": 0.95,
+          "regime": 0,
+          "value": 0.0
+        },
+        {
+          "boundary": 0.5,
+          "regime": 1,
+          "value": 0.0
+        },
+        {
+          "boundary": 0.95,
+          "regime": 1,
+          "value": 0.0
+        }
+      ],
+      "realized_alarm_rate_combined_at_reference": 0.00025,
+      "realized_alarm_rate_combined_replayed": 0.09125,
+      "realized_alarm_rate_replayed": [
+        {
+          "boundary": 0.5,
+          "regime": 0,
+          "value": 0.03675
+        },
+        {
+          "boundary": 0.95,
+          "regime": 0,
+          "value": 0.0215
+        },
+        {
+          "boundary": 0.5,
+          "regime": 1,
+          "value": 0.0215
+        },
+        {
+          "boundary": 0.95,
+          "regime": 1,
+          "value": 0.01925
+        }
+      ],
+      "reference": [
+        {
+          "boundary": 0.5,
+          "regime": 0,
+          "value": 0.029120198265179677
+        },
+        {
+          "boundary": 0.95,
+          "regime": 0,
+          "value": 0.23605947955390336
+        },
+        {
+          "boundary": 0.5,
+          "regime": 1,
+          "value": 0.11139896373056994
+        },
+        {
+          "boundary": 0.95,
+          "regime": 1,
+          "value": 0.533678756476684
+        }
+      ],
+      "reference_posterior_quantile": [
+        {
+          "boundary": 0.5,
+          "regime": 0,
+          "value": 0.04002050272194511
+        },
+        {
+          "boundary": 0.95,
+          "regime": 0,
+          "value": 0.26151433941021085
+        },
+        {
+          "boundary": 0.5,
+          "regime": 1,
+          "value": 0.15236934370889432
+        },
+        {
+          "boundary": 0.95,
+          "regime": 1,
+          "value": 0.5927175442542006
+        }
+      ],
+      "replay_stream_length": 19000,
+      "resolved_detectable_shift": [
+        {
+          "boundary": 0.5,
+          "regime": 0,
+          "value": 0.024109288268663848
+        },
+        {
+          "boundary": 0.95,
+          "regime": 0,
+          "value": 0.052024271749702325
+        },
+        {
+          "boundary": 0.5,
+          "regime": 1,
+          "value": 0.0890500106386467
+        },
+        {
+          "boundary": 0.95,
+          "regime": 1,
+          "value": 0.11634009194011823
+        }
+      ],
+      "seed": [
+        42,
+        2
+      ],
+      "streams_in_the_tail": [
+        {
+          "boundary": 0.5,
+          "regime": 0,
+          "value": 105
+        },
+        {
+          "boundary": 0.95,
+          "regime": 0,
+          "value": 105
+        },
+        {
+          "boundary": 0.5,
+          "regime": 1,
+          "value": 105
+        },
+        {
+          "boundary": 0.95,
+          "regime": 1,
+          "value": 105
+        }
+      ],
+      "streams_per_centre": 10,
+      "threshold": [
+        {
+          "boundary": 0.5,
+          "regime": 0,
+          "value": 14.376120074558917
+        },
+        {
+          "boundary": 0.95,
+          "regime": 0,
+          "value": 14.856756216944495
+        },
+        {
+          "boundary": 0.5,
+          "regime": 1,
+          "value": 14.080965309681151
+        },
+        {
+          "boundary": 0.95,
+          "regime": 1,
+          "value": 13.739505778899856
+        }
+      ],
+      "wire_quantile_level": 0.02625
+    },
+    "recalibrations": [],
+    "streamless": false
+  },
+  "monitored_offset": 2000,
+  "outcome": "repaired",
+  "pool_positions": {
+    "base": 13566,
+    "mentalhealth": 4526,
+    "sensinfo": 2908
+  },
+  "post_alarm_blocks": {
+    "alarmed_at": 13936,
+    "audit_length": 1200,
+    "audit_reused_rows": 0,
+    "audit_sha256": "e16cd7166b2faad5caa7ed5349ddbe1f9a7c38c0c580cace2a2e67f80c31ca7b",
+    "eligible_attack": 830,
+    "eligible_base": 3579,
+    "excluded_items": 300,
+    "gate_length": 300,
+    "gate_reused_rows": 0,
+    "gate_sha256": "7f945de16909ce5ec5f1e161d275ddb04a041c30afc1d311ed112557f2f7c418",
+    "rate": 0.2200536870361598,
+    "seed": [
+      42,
+      2,
+      13936,
+      20260730
+    ]
+  },
+  "probe_selection": [
+    {
+      "group": 0,
+      "parameter": "C",
+      "value": 0.001
+    },
+    {
+      "group": 1,
+      "parameter": "C",
+      "value": 0.001
+    }
+  ],
+  "r_locked": 0.2200536870361598,
+  "recipe": {
+    "path": "recipe_2.npz",
+    "sha256": "9a3401c8d1d68bd75c0801ea5ff97c445c3ac4cb231af5fb9ec798bb06597eb6"
+  },
+  "reference_in": {
+    "over_block": 0.04741379310344827,
+    "recall": 0.7941176470588235
+  },
+  "refusal": null
+}

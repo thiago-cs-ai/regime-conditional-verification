@@ -1,0 +1,44 @@
+study: bring-your-policy-lg3
+seeds: [42]
+frame:
+  path: null
+  name: bring-your-policy-lg3
+  fitting_labels: oracle
+split:
+  evaluation_fraction: 0.2
+  calibration_fraction: 0.4375
+  strata: [verdict, agreement]
+estimator:
+  probe:
+    family: linear
+    select:
+      C: [0.0001, 0.001, 0.01, 0.1]
+  calibration:
+    method: platt
+  route_probe: true
+  route_calibration: true
+flip:
+  threshold: 0.5
+monitor:
+  quiet_horizon_confidence: 0.95
+  detectable_shift:
+    indifference_zone_quantile: 0.99
+  event_bank:
+    boundaries: [0.5, 0.9]
+    budget_allocation: joint
+  calibration:
+    material: evaluation
+    stream_length: null
+    n_streams: 2000
+    streams_per_centre: 1
+loop:
+  mode: deployment
+  audit_sampling_window: 500
+  audit_budget: 318
+  acceptance:
+    form: baseline_relative
+    recall_slack: 0.05
+    over_block_inflation: 0.05
+  max_enlarging_retries: 2
+  cross_fit_folds: 4
+  post_repair_reference_window: 500

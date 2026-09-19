@@ -1,0 +1,72 @@
+[project]
+name = "regime-conditional-verification"
+version = "0.1.0"
+description = "RCV: per-regime correctness estimation that adapts a wrapped safety classifier to the deployer's policy — selective correction, a label-free drift alarm, and the repair loop behind arXiv:2608.14089"
+readme = "README.md"
+requires-python = ">=3.11"
+license = { text = "MIT" }
+keywords = ["safety", "verification", "calibration", "drift-monitoring", "llm-safety-classifiers", "correctness-estimation", "selective-correction"]
+dependencies = [
+    "numpy",
+    "scipy",
+    "scikit-learn",
+    "pyyaml",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest",
+    "ruff",
+]
+# The GPU leg (src/rcv/extraction): representation extraction and the LoRA fine-tune. Every torch
+# import in that package sits inside a function, so the library — and `rcv demo` — load without it.
+gpu = [
+    "torch",
+    "transformers",
+    "peft",
+    "accelerate",
+]
+# The corpus rebuilders (src/rcv/rebuild): reconstruct each evaluation set locally from its official
+# release, under that release's own access terms.
+rebuild = [
+    "datasets",
+]
+
+[project.scripts]
+rcv = "rcv.cli:main"
+
+[project.urls]
+Repository = "https://github.com/thiago-cs-ai/regime-conditional-verification"
+Paper = "https://arxiv.org/abs/2608.14089"
+Issues = "https://github.com/thiago-cs-ai/regime-conditional-verification/issues"
+
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-data]
+"rcv.demo" = ["records/**/*.json", "records/*.md"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q"
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+src = ["src", "tests"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "W", "UP", "B"]
+ignore = ["E501"]
+
+[tool.ruff.lint.per-file-ignores]
+# B905: zip() without strict= truncates. B023: ramp-builder lambda. B017: tests assert Exception.
+"sandbox/build_ramp_stream_frames.py" = ["B023", "B905"]
+"sandbox/build_stream_frames.py" = ["B905"]
+"src/rcv/belief_bank.py" = ["B905"]
+"src/rcv/probes.py" = ["B905"]
+"tests/*" = ["B017", "B905", "E402"]

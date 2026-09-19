@@ -1,0 +1,784 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="dark light">
+  <meta name="theme-color" content="#121314" media="(prefers-color-scheme: dark)">
+  <meta name="theme-color" content="#f3f4f6" media="(prefers-color-scheme: light)">
+  <meta name="description" content="RCV wraps the safety classifier you already run. Per-regime probes correct verdicts for your policy, raise a label-free drift alarm, and repair the wrapper in place.">
+  <title>RCV — Your policy on the safety classifier you already run</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%23121314'/%3E%3Crect x='6' y='6' width='20' height='20' rx='3' fill='none' stroke='%232eb0e0' stroke-width='2'/%3E%3Ccircle cx='16' cy='16' r='3' fill='%232eb0e0'/%3E%3C/svg%3E">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource-variable/ibm-plex-sans/index.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource-variable/jetbrains-mono/index.css">
+  <style>
+    /* ------------------------------------------------------------------
+       Docket — IBM Plex Sans, ISO 3864 Signal Blue (RAL 5005).
+       Dark default; light via prefers-color-scheme.
+    ------------------------------------------------------------------ */
+    :root {
+      --font-sans: "IBM Plex Sans Variable", "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+      --font-serif: "IBM Plex Sans Variable", "IBM Plex Sans", system-ui, sans-serif;
+      --font-mono: "JetBrains Mono Variable", "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+
+      --step--1: clamp(0.83rem, 0.79rem + 0.18vw, 0.94rem);
+      --step-0:  clamp(1.05rem, 1.00rem + 0.25vw, 1.19rem);
+      --step-1:  clamp(1.26rem, 1.18rem + 0.40vw, 1.49rem);
+      --step-2:  clamp(1.51rem, 1.38rem + 0.62vw, 1.86rem);
+      --step-3:  clamp(1.81rem, 1.62rem + 0.95vw, 2.33rem);
+      --step-4:  clamp(2.18rem, 1.90rem + 1.40vw, 2.91rem);
+      --step-5:  clamp(2.61rem, 2.21rem + 1.99vw, 3.64rem);
+
+      --space-2xs: 0.5rem;
+      --space-xs:  0.75rem;
+      --space-s:   1rem;
+      --space-m:   1.5rem;
+      --space-l:   2rem;
+      --space-xl:  3rem;
+      --space-2xl: 4rem;
+      --space-3xl: 6rem;
+
+      --radius: 0.2rem;
+      --max: 64rem;
+      --measure-copy: 36rem;
+      --heading-weight: 560;
+
+      color-scheme: dark;
+      --c-bg: #121314;
+      --c-surface: #1a1c1e;
+      --c-surface-2: #232628;
+      --c-text: #e8eaec;
+      --c-muted: #8e949b;
+      --c-border: #2c3034;
+      --c-accent: #2eb0e0;
+      --c-accent-soft: rgba(46, 176, 224, 0.16);
+      --c-on-accent: #121314;
+    }
+    @media (prefers-color-scheme: light) {
+      :root {
+        color-scheme: light;
+        --c-bg: #f3f4f6;
+        --c-surface: #e8eaed;
+        --c-surface-2: #dde0e4;
+        --c-text: #16181a;
+        --c-muted: #5c636a;
+        --c-border: #d4d8dd;
+        --c-accent: #005387;
+        --c-accent-soft: rgba(0, 83, 135, 0.10);
+        --c-on-accent: #f4f8fa;
+      }
+    }
+
+    /* ------------------------------------------------------------------ Base */
+    *, *::before, *::after { box-sizing: border-box; }
+    html {
+      background: var(--c-bg);
+      color: var(--c-text);
+      font-family: var(--font-sans);
+      font-size: var(--step-0);
+      line-height: 1.65;
+      -webkit-font-smoothing: antialiased;
+      text-rendering: optimizeLegibility;
+      scroll-behavior: smooth;
+    }
+    body { margin: 0; min-height: 100dvh; }
+    h1, h2, h3, h4 {
+      font-family: var(--font-serif);
+      font-weight: var(--heading-weight);
+      line-height: 1.13;
+      letter-spacing: -0.012em;
+      text-wrap: balance;
+      color: var(--c-text);
+      margin: 0;
+    }
+    p { text-wrap: pretty; }
+    a {
+      color: var(--c-accent);
+      text-decoration: underline;
+      text-decoration-thickness: 1px;
+      text-underline-offset: 0.2em;
+      text-decoration-color: color-mix(in srgb, var(--c-accent) 35%, transparent);
+      transition: text-decoration-color 0.15s ease;
+    }
+    a:hover { text-decoration-color: var(--c-accent); }
+    code, pre, kbd { font-family: var(--font-mono); }
+    :not(pre) > code {
+      font-size: 0.88em;
+      background: var(--c-surface);
+      border: 1px solid var(--c-border);
+      border-radius: 0.35em;
+      padding: 0.1em 0.35em;
+    }
+    :focus-visible { outline: 2px solid var(--c-accent); outline-offset: 2px; border-radius: 2px; }
+    ::selection { background: var(--c-accent-soft); }
+    svg { max-width: 100%; display: block; }
+    #how, #try, #demo, #engineering, #problem { scroll-margin-top: 6.5rem; }
+
+    .skip {
+      position: absolute; left: -999px; top: 0; z-index: 100;
+      background: var(--c-accent); color: var(--c-on-accent); padding: 8px 14px;
+    }
+    .skip:focus { left: 12px; top: 12px; }
+
+    .wrap { width: min(var(--max), calc(100% - 2.5rem)); margin-inline: auto; }
+
+    /* ------------------------------------------------------------------ Header */
+    header.site {
+      position: sticky;
+      top: 0;
+      z-index: 50;
+      border-bottom: 1px solid var(--c-border);
+      background: var(--c-bg);
+    }
+    .site-inner {
+      display: flex; align-items: center; justify-content: space-between; gap: 1rem;
+      width: min(var(--max), calc(100% - 2.5rem)); margin-inline: auto;
+      padding: 1rem 0;
+    }
+    .brand {
+      display: inline-flex; align-items: baseline; gap: 0.6rem;
+      font-family: var(--font-serif); font-size: 1.15rem; font-weight: 500;
+      letter-spacing: -0.012em; color: var(--c-text); text-decoration: none;
+    }
+    .brand a.brand-name { color: var(--c-text); text-decoration: none; }
+    .brand .by {
+      font-family: var(--font-sans); font-size: 0.85rem; color: var(--c-muted);
+      letter-spacing: 0;
+    }
+    .site-nav { display: flex; align-items: center; gap: 0.25rem; }
+    .site-nav a.nav-text {
+      color: var(--c-muted); font-size: 0.95rem; text-decoration: none;
+      padding: 0.4rem 0.65rem; border-radius: 0.375rem; transition: color 0.15s ease, background 0.15s ease;
+    }
+    .site-nav a.nav-text:hover { color: var(--c-text); background: var(--c-surface); }
+
+    .btn {
+      display: inline-flex; align-items: center; justify-content: center; gap: 0.5rem;
+      border-radius: var(--radius); padding: 0.55rem 1rem;
+      font-size: 0.95rem; font-weight: 550; letter-spacing: -0.01em;
+      border: 1px solid transparent; text-decoration: none; cursor: pointer;
+      transition: background 0.15s ease, border-color 0.15s ease;
+    }
+    .btn-primary { background: var(--c-accent); color: var(--c-on-accent); }
+    .btn-primary:hover { background: color-mix(in srgb, var(--c-accent) 88%, var(--c-text)); }
+    .btn-ghost { color: var(--c-text); border-color: var(--c-border); background: transparent; }
+    .btn-ghost:hover { background: var(--c-surface); border-color: color-mix(in srgb, var(--c-border) 55%, var(--c-muted)); }
+
+    /* ------------------------------------------------------------------ Hero */
+    .hero { padding: var(--space-3xl) 0 var(--space-2xl); }
+    .eyebrow {
+      display: inline-flex; align-items: center; gap: 0.6rem; margin: 0 0 var(--space-m);
+      font-family: var(--font-sans); font-size: var(--step-1); font-weight: 550;
+      letter-spacing: 0.06em; text-transform: uppercase; color: var(--c-accent);
+    }
+    h1.display { font-size: var(--step-5); margin-bottom: var(--space-m); }
+    .lede {
+      font-size: var(--step-1); font-family: var(--font-serif); font-weight: 420;
+      color: var(--c-muted); margin: 0 0 var(--space-s); line-height: 1.45;
+    }
+    .hero-actions { display: flex; flex-wrap: wrap; gap: 0.6rem; margin-bottom: var(--space-l); }
+
+    /* The capture is sized by its content, not by a fixed box: the longest transcript line is
+       99 monospace characters, so the block takes the full text column and the type scales with
+       the viewport to keep that line whole. Under ~840px it pins and scrolls instead. */
+    .codeblock {
+      background: var(--c-surface);
+      border: 1px solid var(--c-border);
+      border-radius: var(--radius);
+      overflow: hidden;
+    }
+    .codeblock-bar {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 0.5rem 1rem; border-bottom: 1px solid var(--c-border);
+      color: var(--c-muted); font-size: 0.75rem; font-family: var(--font-mono);
+      letter-spacing: 0.06em; text-transform: uppercase;
+    }
+    .codeblock pre {
+      margin: 0; padding: var(--space-s) var(--space-m);
+      font-size: clamp(0.79rem, 0.54rem + 0.48vw, 0.94rem);
+      line-height: 1.7; overflow-x: auto;
+    }
+    .prompt { color: var(--c-muted); }
+    .cmd { color: var(--c-accent); font-weight: 550; }
+
+    /* ------------------------------------------------------------------ Stats */
+    .stats { border-top: 1px solid var(--c-border); border-bottom: 1px solid var(--c-border); background: var(--c-surface); }
+    .stat-grid {
+      display: grid; grid-template-columns: repeat(4, 1fr);
+      width: min(var(--max), calc(100% - 2.5rem)); margin-inline: auto;
+    }
+    .stat { padding: var(--space-2xl) var(--space-m); border-right: 1px solid var(--c-border); }
+    .stat:last-child { border-right: none; }
+    .stat-n {
+      font-family: var(--font-sans); font-size: clamp(3rem, 5.2vw, 4rem); font-weight: 700;
+      letter-spacing: -0.03em; line-height: 1; color: var(--c-text);
+      font-variant-numeric: tabular-nums lining-nums; margin: 0 0 0.55rem;
+    }
+    .stat-h {
+      font-size: 1.05rem; font-weight: 550; letter-spacing: -0.01em; margin: 0;
+      color: var(--c-text);
+    }
+    .stat > p:not(.stat-n):not(.stat-h) {
+      color: var(--c-muted); font-size: 0.92rem; line-height: 1.5; margin: 0.55rem 0 0;
+    }
+
+    /* ------------------------------------------------------------------ Sections */
+    section.block { padding: var(--space-3xl) 0; }
+    .sec-kicker {
+      font-family: var(--font-sans); font-size: var(--step-0); font-weight: 550;
+      letter-spacing: 0.06em; text-transform: uppercase; color: var(--c-accent);
+      margin: 0 0 0.65rem;
+      max-width: var(--measure-copy);
+    }
+    h2.sec-title {
+      font-size: var(--step-3);
+      max-width: var(--measure-copy);
+      margin-bottom: var(--space-s);
+    }
+    #how .sec-title, #engineering .sec-title { margin-bottom: var(--space-l); }
+    .sec-lead {
+      color: var(--c-muted); font-size: var(--step-0);
+      max-width: var(--measure-copy); margin: 0 0 var(--space-xl);
+    }
+
+    .card {
+      background: var(--c-surface); border: 1px solid var(--c-border);
+      border-radius: var(--radius); transition: border-color 0.15s ease;
+    }
+    .card:hover { border-color: color-mix(in srgb, var(--c-border) 45%, var(--c-muted)); }
+
+    /* Problem */
+    .fail-grid { display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-s); }
+    .fail { padding: var(--space-l) var(--space-m); }
+    .fail-n {
+      font-family: var(--font-mono); font-size: 0.85rem; letter-spacing: 0.06em;
+      text-transform: uppercase; color: var(--c-muted); margin: 0 0 0.75rem;
+    }
+    .fail h3 { font-size: var(--step-1); margin-bottom: 0.6rem; }
+    .fail p { margin: 0; color: var(--c-muted); font-size: 0.98rem; }
+    .close-line {
+      margin: var(--space-l) 0 0; padding: 0.9rem 1.25rem;
+      border-inline-start: 3px solid var(--c-accent);
+      background: var(--c-accent-soft);
+      border-radius: 0 var(--radius) var(--radius) 0;
+      color: var(--c-text); font-size: var(--step-0);
+    }
+    .close-line strong { color: var(--c-accent); font-weight: 600; }
+    .policy-example { margin: var(--space-l) 0 0; }
+    .policy-example p { margin: 0; }
+    .policy-example p + p { margin-top: var(--space-s); color: var(--c-muted); }
+
+    /* How it works */
+    .arch-frame {
+      background: var(--c-surface); border: 1px solid var(--c-border);
+      border-radius: var(--radius); padding: var(--space-s);
+      margin: 0 0 var(--space-m); overflow-x: auto;
+    }
+    .arch-svg { width: 100%; height: auto; }
+    .arch-svg .panel { fill: var(--c-bg); stroke: var(--c-border); }
+    .arch-svg .node { fill: var(--c-surface-2); stroke: var(--c-border); }
+    .arch-svg .node-accent { fill: var(--c-accent-soft); stroke: var(--c-accent); }
+    .arch-svg .node-out { fill: var(--c-surface-2); stroke: color-mix(in srgb, var(--c-accent) 55%, transparent); }
+    .arch-svg .node-muted { fill: var(--c-surface); stroke: var(--c-border); stroke-dasharray: 4 3; }
+    .arch-svg .kicker { fill: var(--c-muted); font-size: 11px; letter-spacing: 2.6px; font-family: var(--font-mono); }
+    .arch-svg .title { fill: var(--c-text); font-size: 14px; font-weight: 600; font-family: var(--font-sans); }
+    .arch-svg .sub { fill: var(--c-muted); font-size: 11px; font-family: var(--font-sans); }
+    .arch-svg .flow { fill: none; stroke: var(--c-muted); stroke-width: 1.6; }
+    .arch-svg .flow-accent { stroke: var(--c-accent); }
+    .arch-svg .arr { fill: var(--c-muted); }
+    .arch-svg .arr-accent { fill: var(--c-accent); }
+    .arch-svg .pill { fill: var(--c-accent-soft); stroke: var(--c-accent); }
+    .arch-svg .pill-text { fill: var(--c-accent); font-size: 10px; letter-spacing: 1.6px; font-family: var(--font-mono); }
+    .arch-svg .edge-label { fill: var(--c-muted); font-size: 11px; font-family: var(--font-sans); }
+    .arch-mobile { display: none; }
+
+    .caps { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--space-s); }
+    .cap { padding: var(--space-m); }
+    .cap-icon {
+      width: 36px; height: 36px; border-radius: var(--radius);
+      background: var(--c-accent-soft); color: var(--c-accent);
+      display: grid; place-items: center; margin-bottom: var(--space-s);
+    }
+    .cap-icon svg { width: 18px; height: 18px; }
+    .cap h3 { font-size: var(--step-1); margin-bottom: 0.5rem; }
+    .cap p { margin: 0; color: var(--c-muted); font-size: 0.95rem; }
+    .cap strong { color: var(--c-text); font-weight: 600; }
+
+    .try-grid { display: grid; grid-template-columns: 1.2fr 1fr; gap: var(--space-xl); align-items: center; }
+    .try-grid .sec-lead { margin-bottom: 0; }
+    .try-actions { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-m); margin-top: var(--space-l); }
+    .try-outcomes { margin: 0; padding-left: var(--space-l); border-left: 1px solid var(--c-border); }
+    .try-outcomes dt { font-weight: 600; color: var(--c-text); }
+    .try-outcomes dd { margin: 0.35rem 0 var(--space-m); color: var(--c-muted); }
+    .try-outcomes dd:last-child { margin-bottom: 0; }
+
+    /* Engineering */
+    .eng-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--space-s); }
+    .eng { padding: var(--space-m) var(--space-m) var(--space-m); }
+    .eng-k {
+      font-family: var(--font-mono); font-size: 0.85rem; letter-spacing: 0.06em;
+      text-transform: uppercase; color: var(--c-accent); margin: 0 0 0.5rem;
+    }
+    .eng h3 { font-size: var(--step-1); margin-bottom: 0.5rem; }
+    .eng p { margin: 0; color: var(--c-muted); font-size: 0.95rem; }
+
+    /* ------------------------------------------------------------------ Footer */
+    footer.site {
+      margin-top: var(--space-2xl);
+      border-top: 1px solid var(--c-border);
+      padding: var(--space-2xl) 0 var(--space-xl);
+    }
+    .cite { max-width: 44rem; }
+    .cite h2 { font-size: var(--step-2); margin-bottom: 0.35rem; }
+    .cite h2 a { color: inherit; }
+    .cite-affiliation { color: var(--c-muted); font-size: 1rem; margin: 0 0 0.9rem; }
+    .cite-paper { color: var(--c-muted); font-size: 1rem; margin: 0 0 0.5rem; line-height: 1.5; }
+    .cite-paper a { color: var(--c-text); }
+    .cite-meta { font-family: var(--font-mono); font-size: 0.85rem; color: var(--c-muted); margin: 0 0 var(--space-l); }
+    .legal {
+      display: flex; flex-wrap: wrap; justify-content: space-between; gap: 0.5rem;
+      color: var(--c-muted); font-size: 0.85rem;
+      border-top: 1px solid var(--c-border); padding-top: var(--space-m);
+    }
+    .legal a { color: var(--c-muted); }
+    .legal a:hover { color: var(--c-text); }
+
+    /* ------------------------------------------------------------------ Responsive */
+    @media (max-width: 900px) {
+      .stat-grid { grid-template-columns: 1fr 1fr; }
+      .stat:nth-child(2) { border-right: none; }
+      .stat:nth-child(1), .stat:nth-child(2) { border-bottom: 1px solid var(--c-border); }
+    }
+    @media (max-width: 840px) {
+      .arch-desktop { display: none; }
+      .arch-mobile { display: block; }
+      .caps { grid-template-columns: 1fr; }
+      .eng-grid { grid-template-columns: 1fr; }
+      .try-grid { grid-template-columns: 1fr; }
+      .try-outcomes { border-left: 0; border-top: 1px solid var(--c-border); padding: var(--space-l) 0 0; }
+    }
+    @media (max-width: 640px) {
+      .hero { padding: var(--space-2xl) 0 var(--space-xl); }
+      .site-nav a.nav-text { display: none; }
+      .fail-grid { grid-template-columns: 1fr; }
+      section.block { padding: var(--space-2xl) 0; }
+      .stat { padding: var(--space-l) var(--space-s); }
+    }
+    @media (max-width: 480px) {
+      .stat-grid { grid-template-columns: 1fr; }
+      .stat { border-right: none; border-bottom: 1px solid var(--c-border); }
+      .stat:last-child { border-bottom: none; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      html { scroll-behavior: auto; }
+      * { transition: none !important; }
+    }
+  </style>
+</head>
+<body>
+  <a class="skip" href="#main">Skip to content</a>
+
+  <header class="site">
+    <div class="site-inner">
+      <span class="brand" id="top">
+        <a class="brand-name" href="#top">RCV</a>
+        <span class="by">· <a href="https://www.linkedin.com/in/thiago-cs-ai/" target="_blank" rel="noopener" style="color:inherit">Thiago Sandoval</a></span>
+      </span>
+      <nav class="site-nav" aria-label="Primary">
+        <a class="nav-text" href="#how">How it works</a>
+        <a class="nav-text" href="#demo">Demo</a>
+        <a class="btn btn-ghost" href="https://arxiv.org/abs/2608.14089">Paper</a>
+        <a class="btn btn-primary" href="https://github.com/thiago-cs-ai/regime-conditional-verification">GitHub</a>
+      </nav>
+    </div>
+  </header>
+
+  <main id="main">
+    <section class="hero">
+      <div class="wrap">
+        <p class="eyebrow">Regime-Conditional Verification</p>
+        <h1 class="display">Your policy<br>on the safety classifier you already&nbsp;run.</h1>
+        <p class="lede">A lightweight wrapper reads a safety classifier’s internal state to estimate when a verdict disagrees with your policy. RCV corrects likely mistakes and uses the same estimates to detect drift and guide repairs.</p>
+        <div class="hero-actions">
+          <a class="btn btn-primary" href="https://github.com/thiago-cs-ai/regime-conditional-verification">Open the repository</a>
+          <a class="btn btn-ghost" href="https://arxiv.org/abs/2608.14089">Read the paper</a>
+          <a class="btn btn-ghost" href="#try">Use your policy</a>
+        </div>
+        <div class="arch-frame">
+          <svg class="arch-svg arch-desktop" viewBox="0 0 1040 644" role="img" aria-labelledby="arch-title arch-desc">
+            <title id="arch-title">RCV: learn your policy, correct verdicts, and maintain the probes</title>
+            <desc id="arch-desc">Before deployment, examples labeled under your written policy train and calibrate two probes. During inference, a prompt–response pair enters the frozen classifier. Its verdict selects the safe-verdict or unsafe-verdict probe, which reads the internal state and estimates correctness. The same calibrated score supports verdict correction and drift monitoring without incoming labels. An alarm triggers an audit and a probe update. A held-out check on recall and over-blocking accepts the update or, if no update passes within the label budget, triggers escalation to classifier fine-tuning. Accepted probes return to inference, and monitoring resumes with a refreshed reference.</desc>
+            <defs>
+              <marker id="arr-d" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto">
+                <path class="arr" d="M0 0 L8 4 L0 8 z"/>
+              </marker>
+              <marker id="arr-d-a" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto">
+                <path class="arr-accent" d="M0 0 L8 4 L0 8 z"/>
+              </marker>
+            </defs>
+
+            <rect class="panel" x="12" y="12" width="1016" height="106" rx="10"/>
+            <rect class="panel" x="12" y="138" width="1016" height="226" rx="10"/>
+            <rect class="panel" x="12" y="394" width="1016" height="238" rx="10"/>
+
+            <!-- Policy labels teach the probes before deployment. -->
+            <text class="kicker" x="36" y="40">BEFORE DEPLOYMENT</text>
+            <rect class="node" x="36" y="58" width="182" height="40" rx="8"/>
+            <text class="title" x="127" y="83" text-anchor="middle">Your written policy</text>
+            <path class="flow" d="M218 78 H250" marker-end="url(#arr-d)"/>
+            <rect class="node" x="258" y="58" width="192" height="40" rx="8"/>
+            <text class="title" x="354" y="83" text-anchor="middle">Labeled examples</text>
+            <path class="flow" d="M450 78 H474" marker-end="url(#arr-d)"/>
+            <rect class="node-accent" x="482" y="58" width="248" height="40" rx="8"/>
+            <text class="title" x="606" y="83" text-anchor="middle">Fit and calibrate probes</text>
+            <path class="flow flow-accent" d="M606 98 V186" marker-end="url(#arr-d-a)"/>
+
+            <!-- The classifier's verdict selects one of the two calibrated probes. -->
+            <text class="kicker" x="36" y="168">INFERENCE</text>
+            <rect class="node" x="36" y="226" width="132" height="78" rx="8"/>
+            <text class="title" x="102" y="259" text-anchor="middle">Prompt +</text>
+            <text class="title" x="102" y="279" text-anchor="middle">response</text>
+            <path class="flow" d="M168 266 H198" marker-end="url(#arr-d)"/>
+            <rect class="node-muted" x="206" y="226" width="174" height="78" rx="8"/>
+            <text class="title" x="293" y="271" text-anchor="middle">Frozen classifier</text>
+            <path class="flow flow-accent" d="M380 266 H474" marker-end="url(#arr-d-a)"/>
+            <text class="edge-label" x="427" y="235" text-anchor="middle">Internal state</text>
+            <text class="edge-label" x="427" y="250" text-anchor="middle">+ verdict</text>
+
+            <rect class="node-accent" x="482" y="194" width="248" height="132" rx="8"/>
+            <text class="sub" x="606" y="216" text-anchor="middle">Route by verdict</text>
+            <rect class="node" x="496" y="232" width="104" height="74" rx="6"/>
+            <text class="title" x="548" y="258" text-anchor="middle">Safe-verdict</text>
+            <text class="title" x="548" y="277" text-anchor="middle">probe</text>
+            <text class="sub" x="548" y="295" text-anchor="middle">calibrated</text>
+            <rect class="node" x="612" y="232" width="104" height="74" rx="6"/>
+            <text class="title" x="664" y="258" text-anchor="middle">Unsafe-verdict</text>
+            <text class="title" x="664" y="277" text-anchor="middle">probe</text>
+            <text class="sub" x="664" y="295" text-anchor="middle">calibrated</text>
+
+            <!-- One score branches to correction and monitoring. -->
+            <path class="flow flow-accent" d="M730 266 H798" marker-end="url(#arr-d-a)"/>
+            <text class="edge-label" x="768" y="231" text-anchor="middle">Correctness</text>
+            <text class="edge-label" x="768" y="246" text-anchor="middle">score</text>
+            <circle class="arr-accent" cx="772" cy="266" r="3"/>
+            <rect class="node-out" x="806" y="226" width="198" height="78" rx="8"/>
+            <text class="title" x="905" y="252" text-anchor="middle">Correct likely mistakes</text>
+            <text class="sub" x="905" y="278" text-anchor="middle">Keep or flip verdict</text>
+            <path class="flow flow-accent" d="M772 266 V416 H792 V436" marker-end="url(#arr-d-a)"/>
+
+            <!-- Maintenance flows back toward the probes; only the gate accepts a repair. -->
+            <text class="kicker" x="36" y="420">MAINTENANCE</text>
+            <rect class="node-accent" x="692" y="444" width="200" height="80" rx="8"/>
+            <text class="title" x="792" y="477" text-anchor="middle">Monitor for drift</text>
+            <text class="sub" x="792" y="498" text-anchor="middle">No incoming labels</text>
+            <path class="flow" d="M692 484 H650" marker-end="url(#arr-d)"/>
+            <text class="edge-label" x="669" y="470" text-anchor="middle">Alarm</text>
+            <rect class="node" x="476" y="444" width="166" height="80" rx="8"/>
+            <text class="title" x="559" y="477" text-anchor="middle">Audit</text>
+            <text class="sub" x="559" y="498" text-anchor="middle">New policy labels</text>
+            <path class="flow" d="M476 484 H434" marker-end="url(#arr-d)"/>
+            <rect class="node-accent" x="258" y="444" width="168" height="80" rx="8"/>
+            <text class="title" x="342" y="477" text-anchor="middle">Update probes</text>
+            <text class="sub" x="342" y="498" text-anchor="middle">Train + calibrate</text>
+            <path class="flow" d="M258 484 H216" marker-end="url(#arr-d)"/>
+            <rect class="node" x="36" y="444" width="172" height="80" rx="8"/>
+            <text class="title" x="122" y="477" text-anchor="middle">Held-out check</text>
+            <text class="sub" x="122" y="498" text-anchor="middle">Recall + over-blocking</text>
+
+            <path class="flow flow-accent" d="M36 484 H24 V352 H606 V334" marker-end="url(#arr-d-a)"/>
+            <text class="edge-label" x="248" y="345">Pass: deploy probes + refresh monitor reference</text>
+            <path class="flow" d="M122 524 V588 H258" marker-end="url(#arr-d)"/>
+            <text class="edge-label" x="140" y="550">No pass within label budget</text>
+            <rect class="node-muted" x="266" y="556" width="378" height="64" rx="8"/>
+            <text class="title" x="455" y="593" text-anchor="middle">Escalate to classifier fine-tuning</text>
+          </svg>
+
+          <svg class="arch-svg arch-mobile" viewBox="0 0 360 1130" role="img" aria-labelledby="arch-m-title arch-m-desc">
+            <title id="arch-m-title">RCV: learn your policy, correct verdicts, and maintain the probes</title>
+            <desc id="arch-m-desc">Before deployment, examples labeled under your written policy train and calibrate two probes. During inference, the frozen classifier's verdict selects the safe-verdict or unsafe-verdict probe. Its calibrated correctness score supports both verdict correction and drift monitoring without incoming labels. An alarm triggers an audit and a probe update. A held-out check on recall and over-blocking accepts the update or, if no update passes within the label budget, triggers escalation to classifier fine-tuning. Accepted probes return to inference, and monitoring resumes with a refreshed reference.</desc>
+            <defs>
+              <marker id="arr-m" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto">
+                <path class="arr" d="M0 0 L8 4 L0 8 z"/>
+              </marker>
+              <marker id="arr-m-a" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto">
+                <path class="arr-accent" d="M0 0 L8 4 L0 8 z"/>
+              </marker>
+            </defs>
+
+            <rect class="panel" x="12" y="12" width="336" height="142" rx="10"/>
+            <rect class="panel" x="12" y="174" width="336" height="448" rx="10"/>
+            <rect class="panel" x="12" y="642" width="336" height="476" rx="10"/>
+
+            <text class="kicker" x="30" y="36">BEFORE DEPLOYMENT</text>
+            <rect class="node" x="30" y="50" width="136" height="44" rx="8"/>
+            <text class="title" x="98" y="68" text-anchor="middle">Your written</text>
+            <text class="title" x="98" y="85" text-anchor="middle">policy</text>
+            <path class="flow" d="M166 72 H186" marker-end="url(#arr-m)"/>
+            <rect class="node" x="194" y="50" width="136" height="44" rx="8"/>
+            <text class="title" x="262" y="68" text-anchor="middle">Labeled</text>
+            <text class="title" x="262" y="85" text-anchor="middle">examples</text>
+            <path class="flow" d="M262 94 V104 H180 V110" marker-end="url(#arr-m)"/>
+            <rect class="node-accent" x="64" y="114" width="232" height="30" rx="6"/>
+            <text class="title" x="180" y="134" text-anchor="middle">Fit and calibrate probes</text>
+            <path class="flow flow-accent" d="M64 129 H24 V408 H40" marker-end="url(#arr-m-a)"/>
+
+            <text class="kicker" x="30" y="200">INFERENCE</text>
+            <rect class="node" x="48" y="220" width="264" height="44" rx="8"/>
+            <text class="title" x="180" y="247" text-anchor="middle">Prompt + response</text>
+            <path class="flow" d="M180 264 V288" marker-end="url(#arr-m)"/>
+            <rect class="node-muted" x="48" y="296" width="264" height="48" rx="8"/>
+            <text class="title" x="180" y="325" text-anchor="middle">Frozen classifier</text>
+            <path class="flow flow-accent" d="M180 344 V378" marker-end="url(#arr-m-a)"/>
+            <text class="edge-label" x="192" y="368">Internal state + verdict</text>
+
+            <rect class="node-accent" x="48" y="386" width="264" height="110" rx="8"/>
+            <text class="sub" x="180" y="406" text-anchor="middle">Route by verdict</text>
+            <rect class="node" x="60" y="416" width="114" height="68" rx="6"/>
+            <text class="title" x="117" y="438" text-anchor="middle">Safe-verdict</text>
+            <text class="title" x="117" y="457" text-anchor="middle">probe</text>
+            <text class="sub" x="117" y="476" text-anchor="middle">calibrated</text>
+            <rect class="node" x="186" y="416" width="114" height="68" rx="6"/>
+            <text class="title" x="243" y="438" text-anchor="middle">Unsafe-verdict</text>
+            <text class="title" x="243" y="457" text-anchor="middle">probe</text>
+            <text class="sub" x="243" y="476" text-anchor="middle">calibrated</text>
+
+            <path class="flow flow-accent" d="M180 496 V550" marker-end="url(#arr-m-a)"/>
+            <text class="edge-label" x="192" y="516">Correctness score</text>
+            <circle class="arr-accent" cx="180" cy="530" r="3"/>
+            <path class="flow flow-accent" d="M180 530 H330 V704 H320" marker-end="url(#arr-m-a)"/>
+            <rect class="node-out" x="48" y="558" width="264" height="50" rx="8"/>
+            <text class="title" x="180" y="580" text-anchor="middle">Correct likely mistakes</text>
+            <text class="sub" x="180" y="599" text-anchor="middle">Keep or flip verdict</text>
+
+            <text class="kicker" x="48" y="666">MAINTENANCE</text>
+            <rect class="node-accent" x="48" y="680" width="264" height="44" rx="8"/>
+            <text class="title" x="180" y="699" text-anchor="middle">Monitor for drift</text>
+            <text class="sub" x="180" y="716" text-anchor="middle">No incoming labels</text>
+            <path class="flow" d="M180 724 V744" marker-end="url(#arr-m)"/>
+            <text class="edge-label" x="192" y="742">Alarm</text>
+            <rect class="node" x="48" y="752" width="264" height="50" rx="8"/>
+            <text class="title" x="180" y="774" text-anchor="middle">Audit</text>
+            <text class="sub" x="180" y="793" text-anchor="middle">New policy labels</text>
+            <path class="flow" d="M180 802 V822" marker-end="url(#arr-m)"/>
+            <rect class="node-accent" x="48" y="830" width="264" height="50" rx="8"/>
+            <text class="title" x="180" y="852" text-anchor="middle">Update probes</text>
+            <text class="sub" x="180" y="871" text-anchor="middle">Train + calibrate</text>
+            <path class="flow" d="M180 880 V900" marker-end="url(#arr-m)"/>
+            <rect class="node" x="48" y="908" width="264" height="92" rx="8"/>
+            <text class="title" x="180" y="932" text-anchor="middle">Held-out check</text>
+            <text class="sub" x="180" y="952" text-anchor="middle">Recall + over-blocking</text>
+            <text class="sub" x="180" y="982" text-anchor="middle">Pass: deploy + refresh monitor reference</text>
+            <path class="flow flow-accent" d="M48 978 H24 V474 H40" marker-end="url(#arr-m-a)"/>
+            <path class="flow" d="M180 1000 V1036" marker-end="url(#arr-m)"/>
+            <text class="edge-label" x="192" y="1017">No pass within</text>
+            <text class="edge-label" x="192" y="1031">label budget</text>
+            <rect class="node-muted" x="48" y="1044" width="264" height="60" rx="8"/>
+            <text class="title" x="180" y="1069" text-anchor="middle">Escalate to classifier</text>
+            <text class="title" x="180" y="1089" text-anchor="middle">fine-tuning</text>
+          </svg>
+        </div>
+      </div>
+    </section>
+
+    <section class="stats" aria-label="Measured outcomes">
+      <div class="stat-grid">
+        <article class="stat">
+          <p class="stat-n">6/6</p>
+          <p class="stat-h">Improvements on the deployer's policy</p>
+          <p>Adherence improved in every classifier–dataset combination studied. <a href="https://github.com/thiago-cs-ai/regime-conditional-verification/blob/main/results/README.md">Verify Table 1.</a></p>
+        </article>
+        <article class="stat">
+          <p class="stat-n">81%</p>
+          <p class="stat-h">Detections of previously missed unsafe content</p>
+          <p>Of unsafe items the base classifier passed; the range across six combinations was 29–81%. <a href="https://github.com/thiago-cs-ai/regime-conditional-verification/blob/main/results/README.md">Recompute Table 1.</a></p>
+        </article>
+        <article class="stat">
+          <p class="stat-n">100/100</p>
+          <p class="stat-h">Detections of attack campaigns</p>
+          <p>Runs across ten held-out campaigns on Llama-Guard-3; median first-alarm attack rate: 0.115. On clean traffic, 14 of 90 runs triggered false alarms. <a href="https://arxiv.org/html/2608.14089v1#Sx3.SS0.SSS0.Px6">Detection experiment.</a></p>
+        </article>
+        <article class="stat">
+          <p class="stat-n">79/100</p>
+          <p class="stat-h">In-place repairs of drift episodes</p>
+          <p>In the WildGuardMix/Llama-Guard-3 maintenance census, under the deployed label budget.</p>
+        </article>
+      </div>
+    </section>
+
+    <section class="block" id="problem">
+      <div class="wrap">
+        <p class="sec-kicker">The operator’s problem</p>
+        <h2 class="sec-title">The classifier you deployed is enforcing someone else’s policy.</h2>
+        <p class="sec-lead">A classifier can disagree with your policy from the outset. Even when it performs well initially, changes in traffic can undermine its decisions.</p>
+        <div class="fail-grid">
+          <article class="fail card">
+            <p class="fail-n">Failure 01</p>
+            <h3>Training-time policy, not yours</h3>
+            <p>A classifier may pass content your policy forbids or block content your policy permits. The mismatch can persist even when the model performs well on its own benchmark.</p>
+          </article>
+          <article class="fail card">
+            <p class="fail-n">Failure 02</p>
+            <h3>The traffic at the gate drifts</h3>
+            <p>As users and use cases change, unfamiliar harms can reach the classifier. Performance measured before deployment may no longer reflect the traffic it handles.</p>
+          </article>
+        </div>
+        <div class="close-line policy-example">
+          <p>In our study, the <a href="https://github.com/thiago-cs-ai/regime-conditional-verification/blob/main/judge_prompt.txt">written policy</a> treats an assistant’s agreement to help with a harmful request as a violation, even before the response contains harmful content. Llama-Guard-3 and Beaver were not trained to enforce that clause; WildGuard was.</p>
+          <p>GPT-5-Nano applied the policy to prompt–response pairs. The <a href="https://github.com/thiago-cs-ai/regime-conditional-verification/tree/main/labels">published labels</a> preserve the exact targets RCV learned from. Reuse them without making new judge calls.</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="block" id="how">
+      <div class="wrap">
+        <p class="sec-kicker">How it works</p>
+        <h2 class="sec-title">Wrap once. Correct, detect, and repair in one loop.</h2>
+        <p class="sec-lead">Safe verdicts can miss a policy violation. Unsafe verdicts can block content the policy permits. RCV learns these error directions separately: one calibrated probe handles safe verdicts, and another handles unsafe verdicts. Each probe reads the classifier’s internal state and estimates whether its verdict is wrong.</p>
+
+        <div class="caps">
+          <article class="cap card">
+            <div class="cap-icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M5 12h14"/>
+                <path d="M13 6l6 6-6 6"/>
+                <path d="M5 7v10"/>
+              </svg>
+            </div>
+            <h3>Correct in-line</h3>
+            <p>When the probe estimates that a verdict is more likely wrong than right, RCV flips it: a pass becomes a block, or a block becomes a pass.</p>
+          </article>
+          <article class="cap card">
+            <div class="cap-icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M4 14c2-6 4-8 8-8s6 2 8 8"/>
+                <path d="M4 14h.01M12 14h.01M20 14h.01"/>
+                <circle cx="12" cy="19" r="1.6"/>
+              </svg>
+            </div>
+            <h3>Detect with the same scores</h3>
+            <p>The monitor tracks how often probe scores indicate possible errors. A sustained increase can trigger an alarm without labeling incoming traffic.</p>
+          </article>
+          <article class="cap card">
+            <div class="cap-icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M4 12a8 8 0 0 1 14.2-5"/>
+                <path d="M20 4v6h-6"/>
+                <path d="M20 12a8 8 0 0 1-14.2 5"/>
+                <path d="M4 20v-6h6"/>
+              </svg>
+            </div>
+            <h3>Repair in place</h3>
+            <p>An alarm triggers an audit. Fresh labels train and calibrate updated probes, which must pass a held-out check on recall and over-blocking. If no update passes within the label budget, the loop escalates to classifier fine-tuning.</p>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section class="block" id="try">
+      <div class="wrap try-grid">
+        <div>
+          <p class="sec-kicker">Hands-on guide</p>
+          <h2 class="sec-title">Bring your policy to Llama-Guard-3.</h2>
+          <p class="sec-lead">Use the published policy and labels as a worked example, then substitute your own policy and traffic. Run the workflow and inspect the results.</p>
+          <div class="try-actions">
+            <a class="btn btn-primary" href="https://github.com/thiago-cs-ai/regime-conditional-verification/blob/main/docs/bring-your-policy.md">Follow the guide →</a>
+            <a href="https://github.com/thiago-cs-ai/regime-conditional-verification/blob/main/examples/bring_your_policy.py">Inspect the example code</a>
+          </div>
+        </div>
+        <dl class="try-outcomes">
+          <dt>Measure policy agreement.</dt>
+          <dd>Compare verdicts before and after RCV on held-out examples.</dd>
+          <dt>Inspect maintenance decisions.</dt>
+          <dd>Follow alarms through audits, repair checks, and escalation.</dd>
+          <dt>Account for labels.</dt>
+          <dd>See initial label use and the additional labels consumed by audits.</dd>
+        </dl>
+      </div>
+    </section>
+
+    <section class="block" id="demo">
+      <div class="wrap">
+        <p class="sec-kicker">The published replay, in your terminal</p>
+        <h2 class="sec-title">Follow five maintenance chains.</h2>
+        <p class="sec-lead"><code>rcv demo</code> replays saved results from five published maintenance chains. Each row shows a harm category introduced into simulated traffic. An alarm leads to a labeled audit and a probe update; a held-out check determines whether the update is accepted. Classifier fine-tuning is reported separately in the paper.</p>
+        <div class="codeblock" aria-label="The demo command and its output">
+          <div class="codeblock-bar"><span>uv · rcv demo</span></div>
+          <!-- Verbatim capture of `uv run rcv demo`. Source of truth:
+               tests/golden/demo_transcript.txt, sha256 30695d7047224e07304616b56e37738741dbc827eb8afdff90dbb505877eb0c3
+               Re-capture from the command; never hand-edit. -->
+          <pre><span class="prompt">$</span> <span class="cmd">uv run rcv demo</span>
+chain 42   4 accepted repairs · 2,700 labels
+  mentalhealth   alarm 0.95 · audit 300 · recall 0.794 · over-block 0.047 · repaired
+  sensinfo       alarm 0.95 · audit 300 · recall 0.774 · over-block 0.025 · repaired
+  cyber          alarm 0.50 · audit 600 (2 attempts) · recall 0.746 · over-block 0.035 · repaired
+  stereotypes    alarm 0.95 · audit 300 · recall 0.796 · over-block 0.058 · repaired
+  fraud          no alarm
+
+chain 789   3 accepted repairs · 1,800 labels
+  disinfo        alarm 0.95 · audit 300 · recall 0.784 · over-block 0.004 · repaired
+  fraud          alarm 0.50 · audit 300 · recall 0.806 · over-block 0.035 · repaired
+  violence       alarm 0.50 · audit 300 · recall 0.857 · over-block 0.035 · repaired
+  materialharm   no alarm
+
+chain 1024   3 accepted repairs · 3,300 labels
+  toxic          alarm 0.50 · audit 300 · recall 0.859 · over-block 0.035 · repaired
+  defamation     alarm 0.50 · audit 300 · recall 0.838 · over-block 0.039 · repaired
+  materialharm   alarm 0.95 · audit 300 · recall 0.825 · over-block 0.023 · repaired
+  violence       alarm 0.95 · audit 1200 (4 attempts) · recall 0.864 · over-block 0.087 · escalated
+
+chain 456   2 accepted repairs · 3,000 labels
+  materialharm   alarm 0.95 · audit 600 (2 attempts) · recall 0.806 · over-block 0.017 · repaired
+  sensinfo       alarm 0.95 · audit 300 · recall 0.811 · over-block 0.018 · repaired
+  fraud          alarm 0.50 · audit 1200 (4 attempts) · recall 0.810 · over-block 0.083 · escalated
+
+chain 123   0 accepted repairs · 1,500 labels
+  stereotypes    alarm 0.50 · audit 1200 (4 attempts) · recall 0.724 · over-block 0.025 · escalated</pre>
+        </div>
+        <p class="sec-lead"><code>repaired</code> means the update passed the held-out check; <code>escalated</code> means no update passed within the label budget. <code>no alarm</code> means the monitor did not fire. Each chain total includes its audit labels and one 300-label gate block per alarmed cycle. <a href="https://github.com/thiago-cs-ai/regime-conditional-verification#run-the-replay">Run the replay locally.</a></p>
+      </div>
+    </section>
+
+    <section class="block" id="engineering">
+      <div class="wrap">
+        <p class="sec-kicker">Engineering</p>
+        <h2 class="sec-title">Two probes, a few thousand parameters each.</h2>
+        <div class="eng-grid">
+          <article class="eng card">
+            <p class="eng-k">What you deploy</p>
+            <h3>Calibrated linear probes.</h3>
+            <p>One probe covers the classifier’s safe verdicts; the other covers its unsafe verdicts. Each reads the classifier’s internal state and returns a calibrated probability that the verdict disagrees with your policy. RCV requires access to that internal state alongside the verdict, as in a self-hosted classifier.</p>
+          </article>
+          <article class="eng card">
+            <p class="eng-k">Code license</p>
+            <h3>MIT</h3>
+            <p>Use it, ship it, fork it.</p>
+          </article>
+          <article class="eng card">
+            <p class="eng-k">Public repository</p>
+            <h3>Trace the published results</h3>
+            <p>Inspect the <a href="https://github.com/thiago-cs-ai/regime-conditional-verification/tree/main/labels">frozen policy labels</a>, rebuild the labeled corpora, or verify Table 1 from saved per-seed results. The study implementation and acceptance tests are included. <a href="https://github.com/thiago-cs-ai/regime-conditional-verification#inspect-the-implementation">Start with the README.</a></p>
+          </article>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="site">
+    <div class="wrap">
+      <div class="cite">
+        <p class="sec-kicker">Paper</p>
+        <h2><a href="https://www.linkedin.com/in/thiago-cs-ai/" target="_blank" rel="noopener">Thiago Sandoval</a> &amp; <a href="https://ae.utexas.edu/person/ufuk-topcu/" target="_blank" rel="noopener">Ufuk Topcu</a></h2>
+        <p class="cite-affiliation">The University of Texas at Austin</p>
+        <p class="cite-paper">
+          <a href="https://arxiv.org/abs/2608.14089"><em>Regime-Conditional Verification: Correctness Estimation for Adapting and Monitoring Safety Classifiers.</em></a>
+        </p>
+        <p class="cite-meta">arXiv:2608.14089 · <a href="https://arxiv.org/abs/2608.14089">Read on arXiv</a></p>
+      </div>
+      <div class="legal">
+        <span>RCV · Regime-Conditional Verification</span>
+        <span>© 2026 <a href="https://www.linkedin.com/in/thiago-cs-ai/" target="_blank" rel="noopener">Thiago Sandoval</a></span>
+      </div>
+    </div>
+  </footer>
+</body>
+</html>

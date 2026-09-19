@@ -1,0 +1,179 @@
+{
+  "caught_share_population": {
+    "max": 233,
+    "min": 222,
+    "per_seed": {
+      "1024": 228,
+      "123": 229,
+      "2026": 222,
+      "271828": 231,
+      "31415": 227,
+      "42": 227,
+      "456": 231,
+      "7": 233,
+      "789": 228,
+      "8675309": 233
+    }
+  },
+  "frame_name": "wgmix-big-beaver",
+  "label_set": "oracle",
+  "metrics": {
+    "caught_share": {
+      "mean": 0.5455992774157898,
+      "n": 10,
+      "observed_range": [
+        0.4868421052631579,
+        0.5947136563876652
+      ],
+      "sd": 0.02864338924152993
+    },
+    "corrected_adherence": {
+      "mean": 0.9326907720267557,
+      "n": 10,
+      "observed_range": [
+        0.9274193548387096,
+        0.9378435517970402
+      ],
+      "sd": 0.0034837142788145064
+    },
+    "raw_adherence": {
+      "mean": 0.8980568234235633,
+      "n": 10,
+      "observed_range": [
+        0.8958513396715644,
+        0.9002982530890499
+      ],
+      "sd": 0.001628154925199285
+    },
+    "total_oracle_labels_spent": {
+      "mean": 11708.0,
+      "n": 10,
+      "observed_range": [
+        11708,
+        11708
+      ],
+      "sd": 0.0
+    }
+  },
+  "n": 10,
+  "oracle_labels_spent": {
+    "mean": 11708.0,
+    "per_seed": {
+      "1024": 11708,
+      "123": 11708,
+      "2026": 11708,
+      "271828": 11708,
+      "31415": 11708,
+      "42": 11708,
+      "456": 11708,
+      "7": 11708,
+      "789": 11708,
+      "8675309": 11708
+    }
+  },
+  "provenance": {
+    "code_sha256": "7edd8b7e2ef27c1494cb6987a3e9754dfaf5242884fdf05ef3e75c29b6d277ff",
+    "config": {
+      "estimator": {
+        "calibration": {
+          "method": "platt"
+        },
+        "probe": {
+          "family": "linear",
+          "select": {
+            "C": [
+              0.0001,
+              0.001,
+              0.01,
+              0.1
+            ]
+          }
+        },
+        "route_calibration": true,
+        "route_probe": true
+      },
+      "flip": {
+        "threshold": 0.5
+      },
+      "frame": {
+        "fitting_labels": "oracle",
+        "name": "wgmix-big-beaver",
+        "path": "frames/wgmix_big_beaver.npz",
+        "scoring_labels": [
+          "oracle",
+          "human"
+        ],
+        "sha256": "48950063c47010a343640cac4ebe64cd85ac5304aa8003c9338cd5b8fb390c58"
+      },
+      "loop": {
+        "acceptance": {
+          "false_positive_tolerance": 0.25,
+          "recall_floor": 0.5
+        },
+        "audit_budget": 318,
+        "audit_sampling_window": 500,
+        "cross_fit_folds": 4,
+        "max_enlarging_retries": 2
+      },
+      "monitor": {
+        "calibration": {
+          "n_streams": 2000,
+          "stream_length": 342
+        },
+        "detectable_shift": {
+          "indifference_zone_quantile": 0.99
+        },
+        "event_bank": {
+          "boundaries": [
+            0.5,
+            0.9
+          ],
+          "budget_allocation": "joint"
+        },
+        "quiet_horizon_confidence": 0.95
+      },
+      "seeds": [
+        42,
+        123,
+        456,
+        789,
+        1024,
+        7,
+        2026,
+        31415,
+        271828,
+        8675309
+      ],
+      "split": {
+        "calibration_fraction": 0.4375,
+        "evaluation_fraction": 0.2,
+        "strata": [
+          "verdict",
+          "agreement"
+        ]
+      },
+      "study": "final-wgmix-big-beaver"
+    },
+    "config_sha256": "dcffbbb85e825bfeffdde4695c2fcf86a4faf2a2b8d45535585ffbbc9ffb4225",
+    "environment": {
+      "numpy": "2.5.1",
+      "python": "3.12.3",
+      "scikit-learn": "1.9.0",
+      "scipy": "1.18.0"
+    },
+    "frame_sha256": "48950063c47010a343640cac4ebe64cd85ac5304aa8003c9338cd5b8fb390c58"
+  },
+  "seeds": [
+    42,
+    123,
+    456,
+    789,
+    1024,
+    7,
+    2026,
+    31415,
+    271828,
+    8675309
+  ],
+  "study": "final-wgmix-big-beaver"
+}

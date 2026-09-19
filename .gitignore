@@ -1,0 +1,32 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+build/
+dist/
+.venv/
+.venv-*/
+venv/
+.pytest_cache/
+
+# One lock file is authoritative: requirements.lock, pinned by the published run.
+uv.lock
+.ruff_cache/
+.mypy_cache/
+
+# Environment / secrets — never commit
+.env
+.env.*
+
+# Local model weights, representations, and rebuilt corpora. Published label maps live in labels/.
+*.npy
+*.npz
+*.safetensors
+*.pt
+*.bin
+data/
+/work/
+
+# Local scratch
+scratch/
+*.log

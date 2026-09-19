@@ -1,0 +1,66 @@
+study: panel-lock-fraud-0.30
+seeds:
+- 42
+- 123
+- 456
+- 789
+- 1024
+- 7
+- 2026
+- 31415
+- 271828
+- 8675309
+frame:
+  path: frames/ramp_lg3_fraud_0.30.npz
+  name: ramp-lg3-fraud-0.30
+  fitting_labels: oracle
+  sha256: 266548970365dbff897be2b75f3863a2db6fb9963ef8f94b0cf9e6cad6c1ee9e
+  scoring_labels:
+  - oracle
+  - human
+split:
+  evaluation_fraction: 0.2
+  calibration_fraction: 0.4375
+  strata:
+  - verdict
+  - agreement
+estimator:
+  probe:
+    family: linear
+    select:
+      C:
+      - 0.0001
+      - 0.001
+      - 0.01
+      - 0.1
+  calibration:
+    method: platt
+  route_probe: true
+  route_calibration: true
+flip:
+  threshold: 0.5
+monitor:
+  quiet_horizon_confidence: 0.7
+  detectable_shift:
+    indifference_zone_quantile: 0.99
+  event_bank:
+    boundaries:
+    - 0.5
+    - 0.95
+    budget_allocation: joint
+  calibration:
+    material: stream_prefix
+    prefix_length: 2000
+    stream_length: 19000
+    n_streams: 4000
+    streams_per_centre: 10
+loop:
+  audit_sampling_window: 500
+  audit_budget: 318
+  acceptance:
+    form: baseline_relative
+    recall_slack: 0.02
+    over_block_inflation: 0.05
+  max_enlarging_retries: 2
+  cross_fit_folds: 4
+  observe_only: true

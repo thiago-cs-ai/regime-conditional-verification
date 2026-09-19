@@ -1,0 +1,62 @@
+study: final-table1-pku-lg3
+seeds:
+- 42
+- 123
+- 456
+- 789
+- 1024
+- 7
+- 2026
+- 31415
+- 271828
+- 8675309
+frame:
+  path: frames/pku_lg3.npz
+  name: pku-lg3
+  fitting_labels: oracle
+  sha256: ab6566bd4e069b513fd31de66edb9f3200942f73f822a8b3e2bac49cecbde335
+  scoring_labels:
+  - oracle
+  - human
+split:
+  evaluation_fraction: 0.2
+  calibration_fraction: 0.4375
+  strata:
+  - verdict
+  - agreement
+estimator:
+  probe:
+    family: linear
+    select:
+      C:
+      - 0.0001
+      - 0.001
+      - 0.01
+      - 0.1
+  calibration:
+    method: platt
+  route_probe: true
+  route_calibration: true
+flip:
+  threshold: 0.5
+monitor:
+  quiet_horizon_confidence: 0.95
+  detectable_shift:
+    indifference_zone_quantile: 0.99
+  event_bank:
+    boundaries:
+    - 0.5
+    - 0.9
+    budget_allocation: joint
+  calibration:
+    stream_length: 342
+    n_streams: 2000
+    streams_per_centre: 1
+loop:
+  audit_sampling_window: 500
+  audit_budget: 318
+  acceptance:
+    recall_floor: 0.5
+    false_positive_tolerance: 0.25
+  max_enlarging_retries: 2
+  cross_fit_folds: 4
