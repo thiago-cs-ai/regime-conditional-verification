@@ -5,6 +5,10 @@ on:
     branches: [main]
   pull_request:
 
+defaults:
+  run:
+    shell: bash
+
 jobs:
   lint-test:
     runs-on: ubuntu-latest
@@ -13,21 +17,49 @@ jobs:
 
       - name: Install uv
         uses: astral-sh/setup-uv@v3
-        with:
-          python-version: "3.11"
 
-      - name: Create venv and install (with dev extras)
+      - name: Install development dependencies
         run: |
-          uv venv
-          uv pip install -e ".[dev]"
+          uv venv --python 3.11
+          uv pip install --python .venv/bin/python -e ".[dev]"
 
-      - name: Lint (ruff)
-        run: uv run ruff check .
+      - name: Lint
+        run: .venv/bin/ruff check .
 
-      - name: Unit tests (pytest)
-        run: uv run pytest
+      - name: Unit tests
+        run: .venv/bin/python -m pytest
 
-      # `python -m rcv`, not the `rcv` console script: the module entry point is the one that
-      # cannot be shadowed by a stale shim earlier on PATH.
-      - name: Demo replays byte-for-byte
-        run: uv run python -m rcv demo | diff - tests/golden/demo_transcript.txt
+  smoke:
+    name: Installation and artifacts
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v3
+
+      - name: Install without extras
+        run: |
+          uv venv --python 3.11
+          uv pip install --python .venv/bin/python -e .
+
+      - name: Module entry point replays the demo
+        run: .venv/bin/python -m rcv demo | diff - tests/golden/demo_transcript.txt
+
+      - name: Console entry point replays the demo
+        run: .venv/bin/rcv demo | diff - tests/golden/demo_transcript.txt
+
+      - name: Verify Table 1
+        run: .venv/bin/python smoke/print_table1.py
+
+      - name: Verify artifact checksums
+        run: |
+          shasum -a 256 -c labels/SHA256SUMS
+          shasum -a 256 -c results/SHA256SUMS
+
+      - name: Validate published label maps
+        run: |
+          .venv/bin/python -m rcv.rebuild.label_map gate \
+            --corpus native --path labels/native_pku_labels.jsonl
+          .venv/bin/python -m rcv.rebuild.label_map gate \
+            --corpus wgmix --path labels/wgmix_labels.jsonl
