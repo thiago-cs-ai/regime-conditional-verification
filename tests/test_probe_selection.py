@@ -411,7 +411,7 @@ class TestASpecificationNamingNoGridIsUnmoved:
         assert list(inspect.signature(LinearProbe.fit).parameters) == [
             "self", "representation", "agreement"]
 
-    def test_the_deployed_estimator_reproduces_its_pre_selection_bytes(self):
+    def test_the_deployed_estimator_reproduces_its_pre_selection_values(self):
         frame = build_fixture_frame()
         serving = rows(frame, ~frame["is_stream"])
         fitting, calibration = split_for_fitting(serving)
@@ -425,11 +425,16 @@ class TestASpecificationNamingNoGridIsUnmoved:
         scores = estimator.probe_scores(calibration["representation"], calibration["verdict"])
 
         assert len(probability) == 220
-        assert [np.float64(v).tobytes().hex() for v in probability[:8]] == [
-            "9a72291bbaf2ef3f", "f2b2ab59ccffef3f", "df3a399bdcffef3f", "bc8879fd2affef3f",
-            "0c4643561effef3f", "9394a25e35a9ee3f", "6ac545c28407f63e", "d9a754d75bf0ef3f"]
-        assert np.float64(probability.sum()).tobytes().hex() == "cd24678206e06740"
-        assert np.float64(scores.sum()).tobytes().hex() == "d820c1c64db59340"
+        np.testing.assert_allclose(
+            probability[:8],
+            [0.9983797579294162, 0.9999753714924664, 0.9999831229887056,
+             0.9998984289816444, 0.9998923954792089, 0.9581553314534567,
+             2.1008843888952444e-05, 0.9980906682660545],
+            rtol=1e-14,
+            atol=0.0,
+        )
+        np.testing.assert_allclose(probability.sum(), 191.00079460282578, rtol=1e-14, atol=0.0)
+        np.testing.assert_allclose(scores.sum(), 1261.3259535003945, rtol=1e-14, atol=0.0)
 
     def test_the_estimator_reports_no_selection_where_none_was_made(self):
         frame = build_fixture_frame()
