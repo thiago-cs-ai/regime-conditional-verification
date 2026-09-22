@@ -1,7 +1,7 @@
 # Published policy labels
 
 These are the frozen GPT-5-Nano judgments used in
-[arXiv:2608.14089v1](https://arxiv.org/abs/2608.14089v1). Rebuild the source corpora
+[arXiv:2608.14089v2](https://arxiv.org/abs/2608.14089v2). Rebuild the source corpora
 and join these maps by `item_id` to recover the recorded policy targets. No API
 call or new judge sampling is needed.
 

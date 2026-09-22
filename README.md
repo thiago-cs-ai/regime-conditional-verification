@@ -74,7 +74,7 @@ python smoke/print_table1.py
 This command recomputes the means and sample standard deviations in the paper's Table 1 from 60
 shipped per-seed records. It requires all six classifier–dataset combinations and all ten seed
 identities, checks each saved aggregate, and verifies the rounded values against
-[arXiv:2608.14089v1](https://arxiv.org/abs/2608.14089v1). See
+[arXiv:2608.14089v2](https://arxiv.org/abs/2608.14089v2). See
 [`results/README.md`](results/README.md) for the metrics and provenance.
 
 ## Bring your policy to Llama-Guard-3

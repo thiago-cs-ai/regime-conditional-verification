@@ -179,7 +179,7 @@ def main():
     print("on which the classifier's verdict matches the label axis; corrected adherence is")
     print("the same share after the flip. Caught share is, among unsafe items the classifier")
     print("passed, the share the correction recovers. Polarity throughout: 1 = unsafe.")
-    print("Verified against Table 1 of arXiv:2608.14089v1.")
+    print("Verified against Table 1 of arXiv:2608.14089v2.")
     return 0
 
 

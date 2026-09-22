@@ -1,7 +1,7 @@
 # Published Table 1 records
 
 This directory contains the per-seed records behind Table 1 of
-[arXiv:2608.14089v1](https://arxiv.org/abs/2608.14089v1). The records cover three safety
+[arXiv:2608.14089v2](https://arxiv.org/abs/2608.14089v2). The records cover three safety
 classifiers on PKU-SafeRLHF and WildGuardMix, with ten fixed seeds for each combination. They contain
 numeric results and provenance; they contain no corpus text.
 

@@ -82,7 +82,7 @@ arguments and distinct output paths.
 | Beaver | `beaver_pred`, `beaver_cost`, `beaver_agreement` | `(N, 5120)` under the T_xml template |
 
 Beaver assigns unsafe (`1`) at `beaver_cost ≥ 3.0`, as specified in the paper's
-[Appendix D.1](https://arxiv.org/html/2608.14089v1#A4.SS1).
+[Appendix D.1](https://arxiv.org/html/2608.14089#A4.SS1).
 
 Representations are float32 and follow JSONL row order. Verdict 1 means unsafe.
 LG3/WildGuard scores use their two verdict-token logits; Beaver costs are not
