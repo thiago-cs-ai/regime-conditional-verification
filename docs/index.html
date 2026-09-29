@@ -147,7 +147,7 @@
       padding: 0.4rem 0.65rem; border-radius: 0.375rem; transition: color 0.15s ease, background 0.15s ease;
     }
     .site-nav a.nav-text:hover { color: var(--c-text); background: var(--c-surface); }
-    .site-nav a.nav-about { color: var(--c-text); white-space: nowrap; }
+    .site-nav a.nav-about { white-space: nowrap; }
 
     .btn {
       display: inline-flex; align-items: center; justify-content: center; gap: 0.5rem;
@@ -360,8 +360,8 @@
       .hero { padding: var(--space-2xl) 0 var(--space-xl); }
       .site-inner { flex-wrap: wrap; gap: 0.5rem; }
       .site-nav { flex-wrap: wrap; }
-      .site-nav a.nav-text:not(.nav-about) { display: none; }
-      .site-nav a.nav-about, .site-nav .btn { font-size: 0.85rem; padding: 0.5rem 0.55rem; }
+      .site-nav a.nav-text { display: none; }
+      .site-nav .btn { font-size: 0.85rem; padding: 0.5rem 0.55rem; }
       .fail-grid { grid-template-columns: 1fr; }
       section.block { padding: var(--space-2xl) 0; }
       .stat { padding: var(--space-l) var(--space-s); }
@@ -388,7 +388,7 @@
       <nav class="site-nav" aria-label="Primary">
         <a class="nav-text" href="#how">How it works</a>
         <a class="nav-text" href="#demo">Demo</a>
-        <a class="nav-text nav-about" href="https://www.tsandoval.com">About Thiago</a>
+        <a class="btn btn-ghost nav-about" href="https://www.tsandoval.com">About Thiago</a>
         <a class="btn btn-ghost" href="https://arxiv.org/abs/2608.14089">Paper</a>
         <a class="btn btn-primary" href="https://github.com/thiago-cs-ai/regime-conditional-verification">GitHub</a>
       </nav>
