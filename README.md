@@ -28,7 +28,7 @@ the maintenance experiment on Llama-Guard-3 with WildGuardMix, probe updates pas
 79 of 100 drift episodes within the deployed label budget.
 
 [Overview](https://rcv.tsandoval.com) · [Hands-on guide](docs/bring-your-policy.md) · [Paper](https://arxiv.org/abs/2608.14089) —
-[Thiago Sandoval](https://www.linkedin.com/in/thiago-cs-ai/),
+[Thiago Sandoval](https://www.tsandoval.com/),
 [Ufuk Topcu](https://ae.utexas.edu/person/ufuk-topcu/) (UT Austin)
 
 ## Run the replay
