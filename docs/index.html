@@ -328,6 +328,8 @@
       border-top: 1px solid var(--c-border);
       padding: var(--space-2xl) 0 var(--space-xl);
     }
+    .contact { margin-bottom: var(--space-2xl); }
+    .contact-actions { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-m); }
     .cite { max-width: 44rem; }
     .cite h2 { font-size: var(--step-2); margin-bottom: 0.35rem; }
     .cite h2 a { color: inherit; }
@@ -765,6 +767,14 @@ chain 123   0 accepted repairs · 1,500 labels
 
   <footer class="site">
     <div class="wrap">
+      <section class="contact" aria-labelledby="contact-title">
+        <h2 class="sec-title" id="contact-title">Let’s talk.</h2>
+        <p class="sec-lead">For research collaboration or help applying RCV to your systems, get in touch.</p>
+        <div class="contact-actions">
+          <a class="btn btn-primary" href="mailto:contact@tsandoval.com">Email me</a>
+          <a href="https://www.tsandoval.com">More about my work</a>
+        </div>
+      </section>
       <div class="cite">
         <p class="sec-kicker">Paper</p>
         <h2><a href="https://www.tsandoval.com" target="_blank" rel="noopener">Thiago Sandoval</a> &amp; <a href="https://ae.utexas.edu/person/ufuk-topcu/" target="_blank" rel="noopener">Ufuk Topcu</a></h2>
