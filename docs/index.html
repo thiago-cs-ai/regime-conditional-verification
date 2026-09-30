@@ -6,7 +6,7 @@
   <meta name="color-scheme" content="dark light">
   <meta name="theme-color" content="#121314" media="(prefers-color-scheme: dark)">
   <meta name="theme-color" content="#f3f4f6" media="(prefers-color-scheme: light)">
-  <meta name="description" content="RCV wraps the safety classifier you already run. Per-regime probes correct verdicts for your policy, raise a label-free drift alarm, and repair the wrapper in place.">
+  <meta name="description" content="RCV adapts LLM safety classifiers to your policy, corrects likely errors, detects drift and guides repair using shared correctness estimates.">
   <title>RCV — Your policy on the safety classifier you already run</title>
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%23121314'/%3E%3Crect x='6' y='6' width='20' height='20' rx='3' fill='none' stroke='%232eb0e0' stroke-width='2'/%3E%3Ccircle cx='16' cy='16' r='3' fill='%232eb0e0'/%3E%3C/svg%3E">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource-variable/ibm-plex-sans/index.css">
@@ -173,6 +173,7 @@
       font-size: var(--step-1); font-family: var(--font-serif); font-weight: 420;
       color: var(--c-muted); margin: 0 0 var(--space-s); line-height: 1.45;
     }
+    .hero-byline { font-size: var(--step--1); color: var(--c-muted); margin: 0 0 var(--space-m); }
     .hero-actions { display: flex; flex-wrap: wrap; gap: 0.6rem; margin-bottom: var(--space-l); }
 
     /* The capture is sized by its content, not by a fixed box: the longest transcript line is
@@ -207,9 +208,14 @@
     .stat { padding: var(--space-2xl) var(--space-m); border-right: 1px solid var(--c-border); }
     .stat:last-child { border-right: none; }
     .stat-n {
+      position: relative;
       font-family: var(--font-sans); font-size: clamp(3rem, 5.2vw, 4rem); font-weight: 700;
       letter-spacing: -0.03em; line-height: 1; color: var(--c-text);
       font-variant-numeric: tabular-nums lining-nums; margin: 0 0 0.55rem;
+    }
+    .stat-qualifier {
+      position: absolute; bottom: calc(100% + 0.35rem); left: 0;
+      font-size: 0.32em; font-weight: 550; letter-spacing: 0; line-height: 1.2; white-space: nowrap;
     }
     .stat-h {
       font-size: 1.05rem; font-weight: 550; letter-spacing: -0.01em; margin: 0;
@@ -400,7 +406,8 @@
       <div class="wrap">
         <p class="eyebrow">Regime-Conditional Verification</p>
         <h1 class="display">Your policy<br>on the safety classifier you already&nbsp;run.</h1>
-        <p class="lede">A lightweight wrapper reads a safety classifier’s internal state to estimate when a verdict disagrees with your policy. RCV corrects likely mistakes and uses the same estimates to detect drift and guide repairs.</p>
+        <p class="lede">RCV adapts an existing LLM safety classifier to your policy, correcting missed violations and unnecessary blocking. Its lightweight verification layer estimates when a verdict is wrong and uses the same estimates to detect drift and guide repairs.</p>
+        <p class="hero-byline"><a href="https://www.tsandoval.com" target="_blank" rel="noopener">Thiago Sandoval</a> · <a href="https://ae.utexas.edu/person/ufuk-topcu/" target="_blank" rel="noopener">Ufuk Topcu</a> · The University of Texas at Austin</p>
         <div class="hero-actions">
           <a class="btn btn-primary" href="https://github.com/thiago-cs-ai/regime-conditional-verification">Open the repository</a>
           <a class="btn btn-ghost" href="https://arxiv.org/abs/2608.14089">Read the paper</a>
@@ -590,19 +597,19 @@
           <p>Adherence improved in every classifier–dataset combination studied. <a href="https://github.com/thiago-cs-ai/regime-conditional-verification/blob/main/results/README.md">Verify Table 1.</a></p>
         </article>
         <article class="stat">
-          <p class="stat-n">81%</p>
+          <p class="stat-n"><span class="stat-qualifier">Up to</span> 81%</p>
           <p class="stat-h">Detections of previously missed unsafe content</p>
           <p>Of unsafe items the base classifier passed; the range across six combinations was 29–81%. <a href="https://github.com/thiago-cs-ai/regime-conditional-verification/blob/main/results/README.md">Recompute Table 1.</a></p>
         </article>
         <article class="stat">
           <p class="stat-n">100/100</p>
-          <p class="stat-h">Detections of attack campaigns</p>
-          <p>Runs across ten held-out campaigns on Llama-Guard-3; median first-alarm attack rate: 0.115. On clean traffic, 14 of 90 runs triggered false alarms. <a href="https://arxiv.org/html/2608.14089#Sx3.SS0.SSS0.Px6">Detection experiment.</a></p>
+          <p class="stat-h">Attack detection in test runs</p>
+          <p>Across ten held-out campaigns on Llama-Guard-3 in the dedicated detection experiment. Median first-alarm attack rate: 11.5%. On clean traffic, 14 of 90 runs triggered false alarms. <a href="https://arxiv.org/html/2608.14089#Sx3.SS0.SSS0.Px6">Detection experiment.</a></p>
         </article>
         <article class="stat">
           <p class="stat-n">79/100</p>
-          <p class="stat-h">In-place repairs of drift episodes</p>
-          <p>In the WildGuardMix/Llama-Guard-3 maintenance census, under the deployed label budget.</p>
+          <p class="stat-h">Drift episodes repaired without classifier retraining</p>
+          <p>Probe updates passed the held-out repair check under the deployed label budget in the WildGuardMix/Llama-Guard-3 maintenance experiment.</p>
         </article>
       </div>
     </section>
@@ -702,7 +709,7 @@
       <div class="wrap">
         <p class="sec-kicker">The published replay, in your terminal</p>
         <h2 class="sec-title">Follow five maintenance chains.</h2>
-        <p class="sec-lead"><code>rcv demo</code> replays saved results from five published maintenance chains. Each row shows a harm category introduced into simulated traffic. An alarm leads to a labeled audit and a probe update; a held-out check determines whether the update is accepted. Classifier fine-tuning is reported separately in the paper.</p>
+        <p class="sec-lead"><code>rcv demo</code> replays saved results from five published maintenance chains. Each row shows a harm category introduced into simulated traffic. An alarm leads to a labeled audit and a probe update; a held-out check determines whether the update is accepted. These chains test successive campaigns on the same evolving deployment, separately from the 100-run detection experiment above. Classifier fine-tuning is reported separately in the paper.</p>
         <div class="codeblock" aria-label="The demo command and its output">
           <div class="codeblock-bar"><span>uv · rcv demo</span></div>
           <!-- Verbatim capture of `uv run rcv demo`. Source of truth:
@@ -751,14 +758,14 @@ chain 123   0 accepted repairs · 1,500 labels
             <p>One probe covers the classifier’s safe verdicts; the other covers its unsafe verdicts. Each reads the classifier’s internal state and returns a calibrated probability that the verdict disagrees with your policy. RCV requires access to that internal state alongside the verdict, as in a self-hosted classifier.</p>
           </article>
           <article class="eng card">
-            <p class="eng-k">Code license</p>
-            <h3>MIT</h3>
-            <p>Use it, ship it, fork it.</p>
+            <p class="eng-k">Runtime footprint</p>
+            <h3>No extra LLM call per decision.</h3>
+            <p>RCV corrects verdicts and monitors for drift using the probes’ correctness estimates, without asking another language model to judge each decision. In the published workflow, probe fitting and monitoring run on CPU after the classifier’s representations have been extracted.</p>
           </article>
           <article class="eng card">
             <p class="eng-k">Public repository</p>
             <h3>Trace the published results</h3>
-            <p>Inspect the <a href="https://github.com/thiago-cs-ai/regime-conditional-verification/tree/main/labels">frozen policy labels</a>, rebuild the labeled corpora, or verify Table 1 from saved per-seed results. The study implementation and acceptance tests are included. <a href="https://github.com/thiago-cs-ai/regime-conditional-verification#inspect-the-implementation">Start with the README.</a></p>
+            <p>Inspect the <a href="https://github.com/thiago-cs-ai/regime-conditional-verification/tree/main/labels">frozen policy labels</a>, rebuild the labeled corpora, or verify Table 1 from saved per-seed results. The study implementation and acceptance tests are included. Code and documentation are released under the MIT License. <a href="https://github.com/thiago-cs-ai/regime-conditional-verification#inspect-the-implementation">Start with the README.</a></p>
           </article>
         </div>
       </div>
@@ -778,9 +785,10 @@ chain 123   0 accepted repairs · 1,500 labels
       </div>
       <section class="contact" aria-labelledby="contact-title">
         <h2 class="sec-title" id="contact-title">Let’s talk.</h2>
-        <p class="sec-lead">For research collaboration or help applying RCV to your systems, get in touch.</p>
+        <p class="sec-lead">If you’re interested in research collaboration or applying RCV to your systems, I’d welcome a conversation.</p>
         <div class="contact-actions">
           <a class="btn btn-primary" href="mailto:contact@tsandoval.com">Email me</a>
+          <a class="btn btn-ghost" href="https://www.linkedin.com/in/thiago-cs-ai/" target="_blank" rel="me noopener">LinkedIn</a>
           <a href="https://www.tsandoval.com">More about my work</a>
         </div>
       </section>
