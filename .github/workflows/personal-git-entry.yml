@@ -1,0 +1,286 @@
+name: Personal Git entry policy
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, ready_for_review, edited]
+permissions:
+  contents: read
+concurrency:
+  group: personal-git-entry-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+jobs:
+  git-entry:
+    name: Personal Git entry checks
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Fetch immutable Git objects without checking out project code
+        env:
+          TOKEN: ${{ github.token }}
+          BASE: ${{ github.event.pull_request.base.sha }}
+          HEAD: ${{ github.event.pull_request.head.sha }}
+          MERGED: ${{ github.sha }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          git init --bare objects.git
+          git -C objects.git remote add origin "https://github.com/${GITHUB_REPOSITORY}.git"
+          git -C objects.git config remote.origin.promisor true
+          git -C objects.git config remote.origin.partialclonefilter blob:none
+          auth=$(printf 'x-access-token:%s' "$TOKEN" | base64 -w0)
+          echo "::add-mask::$auth"
+          git -C objects.git config http.https://github.com/.extraheader "AUTHORIZATION: basic $auth"
+          git -C objects.git fetch --no-tags --filter=blob:none origin "$BASE" "$HEAD" "$MERGED"
+      - name: Install checksum-pinned offline scanner
+        shell: bash
+        run: |
+          set -euo pipefail
+          curl --fail --silent --show-error --location --retry 3 -o scan.tgz https://github.com/betterleaks/betterleaks/releases/download/v1.10.1/betterleaks_1.10.1_linux_x64.tar.gz
+          echo 'c174b42d7aa60caf58c0c3e555c0e4bed01fe6b0d99a412bce777b5af4ce913e  scan.tgz' | sha256sum -c -
+          tar -xzf scan.tgz betterleaks
+      - name: Inspect introduced commits and the merge candidate
+        env:
+          BASE: ${{ github.event.pull_request.base.sha }}
+          HEAD: ${{ github.event.pull_request.head.sha }}
+          MERGED: ${{ github.sha }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          cat > guard.py <<'PERSONAL_GIT_POLICY_PY'
+          """Personal Git entry checks. Inspect Git objects; never import or run project code."""
+          import collections
+          import os
+          from pathlib import Path
+          import re
+          import subprocess
+          import sys
+          import tempfile
+          import unicodedata
+
+          LIMIT = 25 * 1024 * 1024
+          WARN = 5 * 1024 * 1024
+          # Reviewed size exceptions use the exact immutable blob ID.
+          SIZE_EXCEPTIONS = frozenset()
+          MARKER = re.compile(rb"^(?:<{7}(?: |$)|={7}$|>{7}(?: |$)|\|{7}(?: |$))")
+          ZERO = re.compile(r"^0+$")
+          OID = re.compile(r"(?:[0-9a-f]{40}|[0-9a-f]{64})\Z")
+          CONFIG = """[extend]
+          useDefault = true
+          [[rules]]
+          id = "huggingface-token-local"
+          description = "Hugging Face access token"
+          regex = '\\bhf_[A-Za-z0-9]{30,45}\\b'
+          keywords = ["hf_"]
+          """
+
+
+          def git(*args, data=None):
+              return subprocess.check_output(["git", "--no-replace-objects", *args], input=data)
+
+
+          def tree(ref):
+              entries = {}
+              if ref:
+                  for entry in git("ls-tree", "-rz", ref).split(b"\0"):
+                      if entry:
+                          meta, path = entry.split(b"\t", 1)
+                          mode, kind, oid = meta.split()
+                          entries[path] = (mode, kind, oid.decode())
+              return entries
+
+
+          def collisions(entries):
+              seen = collections.defaultdict(set)
+              for path in entries:
+                  parts = path.split(b"/")
+                  for i in range(len(parts)):
+                      entry = b"/".join(parts[:i+1])
+                      normalized = unicodedata.normalize("NFC", os.fsdecode(entry)).casefold()
+                      seen[normalized].add(entry)
+              return {k: v for k, v in seen.items() if len(v) > 1}
+
+
+          def marker_counts(content):
+              if b"\0" in content:
+                  return collections.Counter()
+              return collections.Counter(line for line in content.splitlines() if MARKER.match(line))
+
+
+          class Scan:
+              def __init__(self, temp):
+                  self.temp = temp
+                  self.data = temp / "objects"
+                  self.data.mkdir()
+                  self.config = temp / "rules.toml"
+                  self.config.write_text(CONFIG)
+                  self.seen = set()
+                  self.trees = set()
+                  self.scanner = Path(__file__).resolve().with_name("betterleaks")
+                  if not self.scanner.is_file():
+                      raise ValueError("pinned Betterleaks executable is missing")
+                  output = subprocess.check_output([self.scanner, "version"], stderr=subprocess.STDOUT)
+                  if b"1.10.1" not in output:
+                      raise ValueError("unexpected Betterleaks version")
+
+              def materialize(self, oid, path, content=None):
+                  # Keep the basename for filename-sensitive rules. Never follow a Git symlink.
+                  name = path.rsplit(b"/", 1)[-1]
+                  key = (oid, name)
+                  if key in self.seen:
+                      return
+                  self.seen.add(key)
+                  directory = self.data / str(len(self.seen))
+                  directory.mkdir()
+                  if name in (b".", b"..", b""):
+                      raise ValueError("invalid object path")
+                  dest = directory / os.fsdecode(name)
+                  if content is None:
+                      with dest.open("xb") as f:
+                          subprocess.run(["git", "--no-replace-objects", "cat-file", "blob", oid],
+                                         stdout=f, check=True)
+                  else:
+                      dest.write_bytes(content)
+
+              def compare(self, parent, current):
+                  key = (parent, current)
+                  if key in self.trees:
+                      return
+                  self.trees.add(key)
+                  old, new = tree(parent), tree(current)
+                  prior = collisions(old)
+                  for name, paths in collisions(new).items():
+                      if paths - prior.get(name, set()):
+                          raise ValueError("introduced case-colliding Git paths")
+                  for path, entry in new.items():
+                      if old.get(path) == entry or entry[1] != b"blob":
+                          continue
+                      oid = entry[2]
+                      size = int(git("cat-file", "-s", oid))
+                      if size > LIMIT and oid not in SIZE_EXCEPTIONS:
+                          raise ValueError(f"blob {oid} exceeds 25 MiB")
+                      if size >= WARN:
+                          print(f"warning: blob {oid} is at least 5 MiB", file=sys.stderr)
+                      basename = path.rsplit(b"/", 1)[-1].lower()
+                      if basename == b".env" or (basename.startswith(b".env.") and
+                              basename.split(b".")[-1] not in (b"example", b"template", b"sample", b"dist")):
+                          raise ValueError(f"credential file at blob {oid}")
+                      if basename in (b"id_rsa", b"id_ed25519", b"id_ecdsa"):
+                          raise ValueError(f"private key file at blob {oid}")
+                      content = git("cat-file", "blob", oid)
+                      markers = marker_counts(content)
+                      if markers:
+                          previous = old.get(path)
+                          previous_markers = collections.Counter()
+                          if previous and previous[1] == b"blob":
+                              previous_markers = marker_counts(git("cat-file", "blob", previous[2]))
+                          if markers - previous_markers:
+                              raise ValueError(f"introduced conflict marker at blob {oid}")
+                      self.materialize(oid, path, content)
+
+              def history(self, tips, bases):
+                  if not tips:
+                      return
+                  if git("rev-parse", "--is-shallow-repository").strip() == b"true":
+                      raise ValueError("complete history required; fetch the missing history")
+                  commits = set()
+                  for tip in tips:
+                      while True:
+                          kind = git("cat-file", "-t", tip).strip()
+                          if kind != b"tag":
+                              break
+                          tag = git("cat-file", "-p", tip)
+                          self.materialize(tip, b"tag.txt", tag.partition(b"\n\n")[2])
+                          tip = tag.splitlines()[0].split()[1].decode()
+                      if kind == b"commit":
+                          commits.add(tip)
+                      elif kind == b"tree":
+                          self.compare(None, tip)
+                      elif kind == b"blob":
+                          if int(git("cat-file", "-s", tip)) > LIMIT and tip not in SIZE_EXCEPTIONS:
+                              raise ValueError(f"tagged blob {tip} exceeds 25 MiB")
+                          self.materialize(tip, b"tagged-blob")
+                      else:
+                          raise ValueError("unknown Git object")
+                  if not commits:
+                      return
+                  revs = list(sorted(commits)) + ["^" + base for base in sorted(bases)]
+                  for oid in git("rev-list", "--stdin", data=("\n".join(revs)+"\n").encode()).decode().splitlines():
+                      commit = git("cat-file", "commit", oid)
+                      headers, _, msg = commit.partition(b"\n\n")
+                      parents = [s[7:].decode() for s in headers.splitlines() if s.startswith(b"parent ")]
+                      self.compare(parents[0] if parents else None, oid)
+                      self.materialize(oid, b"message.txt", msg)
+
+              def finish(self):
+                  # A clean external cwd and explicit ignore/config prevent PR-controlled suppressions.
+                  env = {k: v for k, v in os.environ.items() if k in ("PATH", "TMPDIR", "LANG", "LC_ALL")}
+                  result = subprocess.run([self.scanner, "dir", "--no-banner", "--redact=100",
+                                           "--ignore-gitleaks-allow", "--config", self.config,
+                                           "--gitleaks-ignore-path", self.temp / "empty.ignore",
+                                           "--log-level", "error", self.data],
+                                          cwd=self.temp, env=env, stdout=subprocess.DEVNULL,
+                                          stderr=subprocess.DEVNULL)
+                  if result.returncode:
+                      raise ValueError(f"Betterleaks rejected the scan (exit {result.returncode}); inspect locally with redaction")
+                  print(f"Git entry policy passed ({len(self.seen)} object/name pairs).")
+
+
+          def commit_bases(ids):
+              bases = set()
+              for oid in ids:
+                  if not OID.fullmatch(oid):
+                      raise ValueError("malformed remote object ID")
+                  result = subprocess.run(["git", "--no-replace-objects", "rev-parse", "--verify",
+                                           "--quiet", oid+"^{commit}"], capture_output=True)
+                  if result.returncode == 0 and subprocess.run(
+                          ["git", "cat-file", "-e", oid+"^{commit}"], stderr=subprocess.DEVNULL).returncode == 0:
+                      bases.add(result.stdout.decode().strip())
+              return bases
+
+
+          def run(scan, args):
+              event = args[0]
+              if event == "pre-commit":
+                  head = subprocess.run(["git", "rev-parse", "--verify", "--quiet", "HEAD"], capture_output=True)
+                  scan.compare(head.stdout.decode().strip() or None, git("write-tree").decode().strip())
+              elif event == "pre-push":
+                  tips, destinations = set(), set()
+                  new_ref = False
+                  for line in sys.stdin.buffer:
+                      _, src, _, dst = line.decode(errors="surrogateescape").split()
+                      if not OID.fullmatch(src) or not OID.fullmatch(dst):
+                          raise ValueError("invalid pre-push input")
+                      if not ZERO.match(src):
+                          tips.add(src)
+                          if ZERO.match(dst):
+                              new_ref = True
+                          else:
+                              destinations.add(dst)
+                  if new_ref:
+                      # Only exclude objects proven reachable on this destination.
+                      for line in git("ls-remote", "--refs", "--", args[2]).splitlines():
+                          destinations.add(line.split(b"\t", 1)[0].decode())
+                  scan.history(tips, commit_bases(destinations))
+              elif event == "pr":
+                  base, head, merged = args[1:]
+                  if not all(OID.fullmatch(x) for x in (base, head, merged)):
+                      raise ValueError("invalid PR revisions")
+                  parents = git("show", "-s", "--format=%P", merged).decode().split()
+                  if parents != [base, head]:
+                      raise ValueError("merge candidate changed; rerun on the current base and head")
+                  scan.history([head], [base])
+                  scan.compare(base, merged)
+              else:
+                  raise ValueError("unknown event")
+              scan.finish()
+
+
+          if __name__ == "__main__":
+              try:
+                  with tempfile.TemporaryDirectory(prefix="git-entry-") as temp:
+                      run(Scan(Path(temp)), sys.argv[1:])
+              except (OSError, ValueError, subprocess.CalledProcessError) as error:
+                  print(f"Git entry policy blocked: {error}", file=sys.stderr)
+                  sys.exit(1)
+          PERSONAL_GIT_POLICY_PY
+          cd objects.git
+          python3 -I ../guard.py pr "$BASE" "$HEAD" "$MERGED"
